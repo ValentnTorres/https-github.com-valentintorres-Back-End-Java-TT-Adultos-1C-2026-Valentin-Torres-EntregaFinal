@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Punto de entrada HTML de la SPA. Vite inyecta aca el bundle de
+     React a traves de /src/main.jsx. Todo lo que se ve en pantalla
+     se renderiza dentro de <div id="root">. -->
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestor de Tareas</title>
+    <!-- Tipografia del sistema de diseno Carbon (IBM): Plex Sans para
+         todo el texto de interfaz, y Plex Mono como fuente utilitaria
+         para datos (fechas, contadores) - le da un aire "de instrumento
+         tecnico" apropiado para una herramienta que expone una API REST. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

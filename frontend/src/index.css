@@ -1,0 +1,104 @@
+/* Estilos globales base: reset + tokens de color del sistema de
+   diseno IBM Carbon (https://carbondesignsystem.com). Los estilos
+   propios de cada seccion (header, tabs, formularios, tablero) estan
+   en App.css para no mezclar todo en un solo archivo.
+
+   Carbon se reconoce por: tipografia IBM Plex Sans, esquinas rectas
+   (sin border-radius en botones/inputs/tarjetas), azul de acento
+   #0f62fe, y un foco de 2px bien marcado en vez de sombras difusas.
+   Sumamos IBM Plex Mono (--font-mono) como fuente utilitaria para
+   datos (fechas, contadores), y un verde de estado (--cds-green-60,
+   tambien un token real de Carbon) para el tablero de tareas. */
+:root {
+  --cds-blue-60: #0f62fe;
+  --cds-blue-70: #0043ce;
+  --cds-blue-10: #edf5ff;
+  --cds-blue-20: #d0e2ff;
+  --cds-gray-100: #161616;
+  --cds-gray-90: #262626;
+  --cds-gray-70: #525252;
+  --cds-gray-50: #8d8d8d;
+  --cds-gray-20: #e0e0e0;
+  --cds-gray-10: #f4f4f4;
+  --cds-red-60: #da1e28;
+  --cds-red-70: #a2191f;
+  --cds-green-10: #defbe6;
+  --cds-green-60: #24a148;
+  --cds-green-70: #198038;
+  --cds-yellow-20: #fdd13a;
+  --cds-yellow-70: #684e00;
+  --cds-white: #ffffff;
+
+  --font-sans: "IBM Plex Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* Una sola curva de transicion para toda la app: asi los hovers y
+     estados de foco se sienten como un mismo sistema, no efectos sueltos. */
+  --easing: cubic-bezier(0.2, 0, 0.38, 0.9);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--cds-gray-10);
+  color: var(--cds-gray-100);
+}
+
+/* Carbon no usa esquinas redondeadas en controles: forzamos 0 porque
+   algunos navegadores le ponen radio por defecto a button/input. */
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: 14px;
+  border-radius: 0;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Respeta a quien prefiere menos movimiento en pantalla (accesibilidad),
+   apagando las transiciones/animaciones que agregamos en App.css. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}
+
+/* Foco marcado de 2px, hacia adentro del elemento: es la firma visual
+   de accesibilidad de Carbon (reemplaza el outline difuso del navegador). */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--cds-blue-60);
+  outline-offset: -2px;
+}
+
+/* Scrollbar fina para el scroll horizontal del tablero de tareas
+   (Chrome/Edge/Firefox). Un detalle chico que evita la barra ancha
+   por defecto del sistema operativo. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--cds-gray-50) transparent;
+}
+
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--cds-gray-50);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

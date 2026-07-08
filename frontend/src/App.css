@@ -1,0 +1,866 @@
+/* Estilos propios de la app, siguiendo el sistema de diseno IBM
+   Carbon (ver index.css para los tokens de color/tipografia). Rasgos
+   distintivos de Carbon que vas a ver repetidos aca:
+     - esquinas rectas en todo (nada de border-radius en botones,
+       inputs, tarjetas o columnas);
+     - un header oscuro de ancho completo ("UI Shell");
+     - botones diferenciados por intencion: primario (azul, accion
+       principal), secundario (gris oscuro), tercerio/outline (borde
+       azul, para acciones menos importantes como "Editar") y de
+       peligro (rojo, para "Eliminar");
+     - "tags" en forma de pildora solo para etiquetas chiquitas (tags,
+       avatares) - es la unica excepcion a las esquinas rectas, tal
+       cual el componente Tag de Carbon;
+     - IBM Plex Mono (.dato-mono) para datos: fechas y contadores,
+       para que se lean como datos y no como prosa. */
+
+.app-shell {
+  min-height: 100vh;
+}
+
+/* Fuente utilitaria para datos (fechas, contadores, emails) */
+.dato-mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.16px;
+}
+
+/* --- Header (UI Shell) --- */
+
+.carbon-header {
+  background: var(--cds-gray-100);
+  color: var(--cds-white);
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.carbon-header-marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* La marca del producto: las llaves { } hacen referencia al JSON que
+   viaja entre este frontend y la API REST. Es el unico acento de color
+   "extra" del header, para que se note que es una marca y no un icono
+   generico del sistema. */
+.carbon-header-logo {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  background: var(--cds-blue-60);
+  color: var(--cds-white);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.carbon-header-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.16px;
+}
+
+.tabs {
+  display: flex;
+  height: 100%;
+}
+
+.tab {
+  height: 100%;
+  border: none;
+  background: none;
+  color: #c6c6c6;
+  padding: 0 16px;
+  font-size: 14px;
+  border-bottom: 3px solid transparent;
+  transition: background-color 110ms var(--easing), color 110ms var(--easing);
+}
+
+.tab:hover {
+  background: var(--cds-gray-90);
+  color: var(--cds-white);
+}
+
+.tab-activo,
+.tab-activo:hover {
+  color: var(--cds-white);
+  border-bottom-color: var(--cds-blue-60);
+  font-weight: 600;
+  background: none;
+}
+
+/* En pantallas chicas el header pasa a 2 filas (marca arriba, tabs
+   abajo) en vez de achicar el titulo hasta que se pise con las tabs. */
+@media (max-width: 640px) {
+  .carbon-header {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+
+  .tabs {
+    width: 100%;
+    height: 40px;
+  }
+
+  .tab {
+    flex: 1;
+  }
+}
+
+/* --- Contenido --- */
+
+.app-main {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 40px 32px 64px;
+}
+
+@media (max-width: 640px) {
+  .app-main {
+    padding: 24px 16px 48px;
+  }
+}
+
+.encabezado-seccion {
+  margin-bottom: 32px;
+}
+
+.app-main h2 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0;
+  color: var(--cds-gray-100);
+}
+
+.subtitulo {
+  font-size: 14px;
+  color: var(--cds-gray-70);
+  margin: 4px 0 0;
+  max-width: 46em;
+}
+
+/* --- Formularios (Tile de Carbon: fondo blanco, borde recto) --- */
+
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 32px;
+  background: var(--cds-white);
+  padding: 20px;
+  border: 1px solid var(--cds-gray-20);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo-ancho {
+  flex: 1;
+  min-width: 200px;
+}
+
+.campo-boton {
+  flex-direction: row;
+  gap: 8px;
+}
+
+.campo label {
+  font-size: 12px;
+  color: var(--cds-gray-70);
+}
+
+.formulario input,
+.formulario select {
+  background: var(--cds-gray-10);
+  border: none;
+  border-bottom: 1px solid var(--cds-gray-50);
+  padding: 11px 16px;
+  color: var(--cds-gray-100);
+  transition: border-color 110ms var(--easing), background-color 110ms var(--easing);
+}
+
+.formulario input:hover,
+.formulario select:hover {
+  background: var(--cds-gray-20);
+}
+
+.formulario input::placeholder {
+  color: var(--cds-gray-70);
+}
+
+.formulario button,
+.tarjeta-asignar button {
+  border: none;
+  padding: 0 16px;
+  height: 40px;
+  align-self: flex-end;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--cds-blue-60);
+  color: var(--cds-white);
+  transition: background-color 110ms var(--easing);
+}
+
+.formulario button:hover,
+.tarjeta-asignar button:hover {
+  background: var(--cds-blue-70);
+}
+
+.formulario button[type="button"] {
+  background: var(--cds-gray-100);
+}
+
+.formulario button[type="button"]:hover {
+  background: var(--cds-gray-90);
+}
+
+.mensaje-error {
+  color: var(--cds-red-70);
+  background: var(--cds-white);
+  border-left: 3px solid var(--cds-red-60);
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+/* --- Listas simples de Proyectos y Usuarios --- */
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--cds-gray-20);
+  border: 1px solid var(--cds-gray-20);
+}
+
+.lista > li {
+  background: var(--cds-white);
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  transition: background-color 110ms var(--easing);
+}
+
+.lista > li:hover {
+  background: var(--cds-blue-10);
+}
+
+.lista strong {
+  color: var(--cds-gray-100);
+}
+
+.lista p {
+  margin: 2px 0 0;
+  color: var(--cds-gray-70);
+  font-size: 14px;
+}
+
+.fila-usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Avatar de iniciales: 3 variantes de color, elegidas de forma
+   deterministica segun el nombre (ver UsuariosPage.jsx). Todos los
+   colores salen de la misma paleta que ya usa el resto de la app. */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.avatar-azul {
+  background: var(--cds-blue-20);
+  color: var(--cds-blue-70);
+}
+
+.avatar-gris {
+  background: var(--cds-gray-20);
+  color: var(--cds-gray-100);
+}
+
+.avatar-verde {
+  background: var(--cds-green-10);
+  color: var(--cds-green-70);
+}
+
+.acciones {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+  .lista > li {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Botones "tercerio" (outline) para acciones secundarias como Editar */
+.acciones button,
+.tarjeta-mover button,
+.tarjeta-acciones button {
+  border: 1px solid var(--cds-blue-60);
+  background: var(--cds-white);
+  color: var(--cds-blue-60);
+  padding: 8px 14px;
+  font-size: 13px;
+  transition: background-color 110ms var(--easing);
+}
+
+.acciones button:hover,
+.tarjeta-mover button:hover,
+.tarjeta-acciones button:hover {
+  background: var(--cds-blue-10);
+}
+
+/* Boton de peligro para Eliminar (siempre el ultimo de la fila) */
+.acciones button:last-child,
+.tarjeta-acciones button:last-child {
+  border-color: var(--cds-red-60);
+  color: var(--cds-white);
+  background: var(--cds-red-60);
+}
+
+.acciones button:last-child:hover,
+.tarjeta-acciones button:last-child:hover {
+  background: var(--cds-red-70);
+  border-color: var(--cds-red-70);
+}
+
+/* --- Barra superior del tablero: titulo + avatares + busqueda/filtro --- */
+
+.tablero-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tablero-titulo-bloque h2 {
+  margin: 0;
+}
+
+.tablero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.avatares-pila {
+  display: flex;
+}
+
+.avatar-pila {
+  border: 2px solid var(--cds-gray-10);
+  margin-left: -8px;
+}
+
+.avatar-pila:first-child {
+  margin-left: 0;
+}
+
+.tablero-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.input-busqueda,
+.select-filtro {
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  padding: 0 12px;
+  height: 40px;
+  font-size: 14px;
+  color: var(--cds-gray-100);
+  transition: border-color 110ms var(--easing);
+}
+
+.input-busqueda {
+  width: 220px;
+}
+
+.input-busqueda:focus,
+.select-filtro:focus {
+  outline: none;
+  border-color: var(--cds-blue-60);
+}
+
+.boton-primario {
+  border: none;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--cds-blue-60);
+  color: var(--cds-white);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 110ms var(--easing);
+}
+
+.boton-primario:hover {
+  background: var(--cds-blue-70);
+}
+
+.boton-primario:disabled {
+  background: var(--cds-gray-20);
+  color: var(--cds-gray-50);
+  cursor: not-allowed;
+}
+
+/* --- Tablero Kanban, con el look de Carbon --- */
+
+.tablero {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  align-items: flex-start;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  background: var(--cds-gray-10);
+  border: 1px solid var(--cds-gray-20);
+  border-top: 3px solid var(--cds-gray-50);
+  width: 284px;
+  flex-shrink: 0;
+  min-height: 80px;
+  transition: background-color 140ms var(--easing), box-shadow 140ms var(--easing);
+}
+
+/* Las columnas creadas por el usuario no tienen un color fijo por
+   nombre (ya no son un enum): la unica variante automatica es un
+   borde superior verde para las marcadas como "final". */
+.columna--final {
+  border-top-color: var(--cds-green-60);
+}
+
+/* Retroalimentacion visual al arrastrar una tarjeta sobre la columna:
+   sin esto, soltar una tarjeta no daba ninguna pista de que iba a pasar. */
+.columna-resaltada {
+  background: var(--cds-blue-10);
+  box-shadow: inset 0 0 0 2px var(--cds-blue-60);
+}
+
+.columna-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--cds-gray-20);
+}
+
+.columna-header-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.columna-header-acciones {
+  justify-content: flex-end;
+}
+
+.columna-nombre {
+  flex: 1;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+  color: var(--cds-gray-70);
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.columna-nombre:hover {
+  color: var(--cds-gray-100);
+}
+
+.columna-nombre-input {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.32px;
+  padding: 3px 6px;
+  background: var(--cds-white);
+  border: none;
+  border-bottom: 1px solid var(--cds-blue-60);
+  color: var(--cds-gray-100);
+}
+
+.columna-mover {
+  border: none;
+  background: none;
+  color: var(--cds-gray-50);
+  font-size: 11px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.columna-mover:hover {
+  color: var(--cds-blue-60);
+}
+
+.columna-mover:disabled {
+  color: var(--cds-gray-20);
+  cursor: not-allowed;
+}
+
+.columna-contador {
+  background: var(--cds-gray-20);
+  color: var(--cds-gray-100);
+  padding: 1px 8px;
+  flex-shrink: 0;
+}
+
+.columna-chip-final,
+.columna-eliminar {
+  border: 1px solid var(--cds-gray-20);
+  background: var(--cds-white);
+  color: var(--cds-gray-70);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+  padding: 3px 8px;
+  transition: background-color 110ms var(--easing), border-color 110ms var(--easing), color 110ms var(--easing);
+}
+
+.columna-chip-final:hover {
+  border-color: var(--cds-green-60);
+  color: var(--cds-green-70);
+}
+
+.columna-chip-final--activo {
+  background: var(--cds-green-10);
+  border-color: var(--cds-green-60);
+  color: var(--cds-green-70);
+}
+
+.columna-eliminar:hover {
+  border-color: var(--cds-red-60);
+  color: var(--cds-red-60);
+}
+
+.columna-cuerpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.columna-vacia {
+  font-size: 13px;
+  color: var(--cds-gray-70);
+  font-style: italic;
+  padding: 0 4px;
+}
+
+.boton-agregar-columna {
+  border: 1px dashed var(--cds-gray-50);
+  background: transparent;
+  color: var(--cds-gray-70);
+  padding: 8px;
+  font-size: 13px;
+  margin-top: 2px;
+  transition: background-color 110ms var(--easing), border-color 110ms var(--easing);
+}
+
+.boton-agregar-columna:hover {
+  background: var(--cds-white);
+  border-color: var(--cds-blue-60);
+  color: var(--cds-blue-60);
+}
+
+.tarjeta {
+  position: relative;
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  padding: 12px 12px 10px 14px;
+  cursor: grab;
+  transition: box-shadow 140ms var(--easing), transform 140ms var(--easing), border-color 140ms var(--easing);
+}
+
+.tarjeta:hover {
+  border-color: var(--cds-blue-60);
+  box-shadow: 0 4px 8px rgba(22, 22, 22, 0.16);
+  transform: translateY(-1px);
+}
+
+.tarjeta:active {
+  cursor: grabbing;
+  border-left: 2px solid var(--cds-blue-60);
+}
+
+.tarjeta-agarre {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  color: var(--cds-gray-50);
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Etiquetas rectangulares (sin border-radius), como en el sistema de
+   diseno de referencia: el proyecto y la fecha limite son "chips"
+   chicos y planos en la parte superior de la tarjeta. */
+.tarjeta-etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 28px 10px 0;
+}
+
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.32px;
+  padding: 3px 8px;
+}
+
+.etiqueta-proyecto {
+  background: var(--cds-blue-20);
+  color: var(--cds-blue-70);
+}
+
+.etiqueta-fecha {
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: 0.16px;
+}
+
+.etiqueta-fecha--normal {
+  background: var(--cds-gray-20);
+  color: var(--cds-gray-70);
+}
+
+.etiqueta-fecha--proxima {
+  background: var(--cds-yellow-20);
+  color: var(--cds-yellow-70);
+}
+
+.etiqueta-fecha--vencida {
+  background: var(--cds-red-60);
+  color: var(--cds-white);
+}
+
+.tarjeta-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 28px 4px 0;
+  color: var(--cds-gray-100);
+}
+
+.tarjeta-descripcion {
+  font-size: 13px;
+  color: var(--cds-gray-70);
+  margin: 0 0 8px;
+}
+
+.tarjeta-asignados {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.asignado-fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar-chico {
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.asignado-nombre {
+  flex: 1;
+  font-size: 12px;
+  color: var(--cds-gray-100);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asignado-quitar {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  color: var(--cds-gray-50);
+}
+
+.asignado-quitar:hover {
+  color: var(--cds-red-60);
+}
+
+.tarjeta-asignar {
+  display: flex;
+  gap: 1px;
+  margin-bottom: 10px;
+}
+
+.tarjeta-asignar select {
+  flex: 1;
+  min-width: 0;
+  background: var(--cds-gray-10);
+  border: none;
+  border-bottom: 1px solid var(--cds-gray-50);
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.tarjeta-asignar button {
+  padding: 0 12px;
+  height: auto;
+  font-size: 14px;
+}
+
+.tarjeta-pie {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--cds-gray-20);
+}
+
+.tarjeta-mover,
+.tarjeta-acciones {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tarjeta-mover button,
+.tarjeta-acciones button {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.tarjeta-mover button:disabled {
+  border-color: var(--cds-gray-20);
+  color: var(--cds-gray-50);
+  background: var(--cds-white);
+  cursor: not-allowed;
+}
+
+/* --- Columna fantasma para crear una columna nueva (estilo Trello) --- */
+
+.columna-nueva {
+  background: transparent;
+  border: 1px dashed var(--cds-gray-50);
+  border-top: 1px dashed var(--cds-gray-50);
+  min-height: 48px;
+  padding: 0;
+}
+
+.columna-nueva-boton {
+  width: 100%;
+  height: 100%;
+  min-height: 48px;
+  border: none;
+  background: transparent;
+  color: var(--cds-gray-70);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 14px;
+  transition: background-color 110ms var(--easing), color 110ms var(--easing);
+}
+
+.columna-nueva-boton:hover {
+  background: var(--cds-white);
+  color: var(--cds-blue-60);
+}
+
+.columna-nueva-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.columna-nueva-form input {
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.columna-nueva-form input:focus {
+  outline: none;
+  border-color: var(--cds-blue-60);
+}
+
+.columna-nueva-botones {
+  display: flex;
+  gap: 8px;
+}
+
+.columna-nueva-botones button {
+  border: none;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--cds-blue-60);
+  color: var(--cds-white);
+}
+
+.columna-nueva-botones button:hover {
+  background: var(--cds-blue-70);
+}
+
+.columna-nueva-botones button[type="button"] {
+  background: var(--cds-gray-100);
+}
+
+.columna-nueva-botones button[type="button"]:hover {
+  background: var(--cds-gray-90);
+}
