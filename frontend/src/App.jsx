@@ -13,10 +13,12 @@ import DespertandoBackend from "./components/DespertandoBackend";
 import { API_BASE_URL, obtenerSesion, borrarSesion } from "./api/config";
 import "./App.css";
 
+// Ya no hay una pestaña "Tareas" en el menu: cada proyecto es su propio
+// tablero aislado (como los boards de Trello), y la unica forma de
+// entrar a uno es clickeandolo desde Proyectos (ver "proyectoAbiertoId").
 const PESTANAS = [
   { id: "proyectos", etiqueta: "Proyectos" },
   { id: "usuarios", etiqueta: "Usuarios" },
-  { id: "tareas", etiqueta: "Tareas" },
 ];
 
 function App() {
@@ -25,6 +27,29 @@ function App() {
   const [usuario, setUsuario] = useState(() => obtenerSesion()?.usuario ?? null);
   const [backendListo, setBackendListo] = useState(false);
   const [mostrarEspera, setMostrarEspera] = useState(false);
+  // Que proyecto tiene su tablero abierto ahora mismo (null = ninguno,
+  // se ven las pestañas normales de Proyectos/Usuarios). Vive aca
+  // arriba (no adentro de TareasPage) porque lo setea ProyectosPage al
+  // clickear un proyecto: hace falta que ambas paginas compartan este
+  // estado a traves del padre comun.
+  const [proyectoAbiertoId, setProyectoAbiertoId] = useState(null);
+
+  // Clickear un proyecto en la pestaña "Proyectos" abre su tablero de
+  // tareas a pantalla completa, aislado de los demas proyectos.
+  function abrirProyecto(proyectoId) {
+    setProyectoAbiertoId(proyectoId);
+  }
+
+  function volverAProyectos() {
+    setProyectoAbiertoId(null);
+  }
+
+  function cambiarPestana(pestanaId) {
+    setPestanaActiva(pestanaId);
+    // Navegar por el menu de arriba (no clickeando un proyecto puntual)
+    // te saca de cualquier tablero que tuvieras abierto.
+    setProyectoAbiertoId(null);
+  }
 
   // Antes de mostrar login o la app, probamos que el backend responda.
   // En local (o con el backend ya despierto) esto tarda milisegundos y
@@ -75,8 +100,8 @@ function App() {
           {PESTANAS.map((pestana) => (
             <button
               key={pestana.id}
-              className={pestana.id === pestanaActiva ? "tab tab-activo" : "tab"}
-              onClick={() => setPestanaActiva(pestana.id)}
+              className={!proyectoAbiertoId && pestana.id === pestanaActiva ? "tab tab-activo" : "tab"}
+              onClick={() => cambiarPestana(pestana.id)}
             >
               {pestana.etiqueta}
             </button>
@@ -88,27 +113,28 @@ function App() {
         </div>
       </header>
 
-      {/* El tablero de Tareas usa un modificador aparte (app-main-tablero)
-          que saca el max-width/centrado y ocupa todo el ancho y alto
-          disponibles: a diferencia de Proyectos/Usuarios (formularios y
-          listas angostas), el Kanban aprovecha mejor toda la pantalla. */}
-      <main className={pestanaActiva === "tareas" ? "app-main app-main-tablero" : "app-main"}>
+      {/* El tablero de un proyecto usa un modificador aparte
+          (app-main-tablero) que saca el max-width/centrado y ocupa
+          todo el ancho y alto disponibles: a diferencia de
+          Proyectos/Usuarios (formularios y listas angostas), el
+          Kanban aprovecha mejor toda la pantalla. */}
+      <main className={proyectoAbiertoId ? "app-main app-main-tablero" : "app-main"}>
         {/* Las 3 paginas quedan montadas todo el tiempo (se ocultan con
             "hidden", no se desmontan). Si en vez de esto renderizaramos
-            solo la pestaña activa, cada cambio de pestaña destruiria el
-            componente anterior junto con los datos que ya habia
-            cargado, obligando a volver a pedirselos a la API (y a
-            mostrar el esqueleto) cada vez que volves a una pestaña que
-            ya habias visitado. Asi, cada pagina pide sus datos una sola
-            vez al arrancar la app, y cambiar de pestaña es instantaneo. */}
-        <div hidden={pestanaActiva !== "proyectos"}>
-          <ProyectosPage />
+            solo la activa, cada cambio destruiria el componente
+            anterior junto con los datos que ya habia cargado,
+            obligando a volver a pedirselos a la API (y a mostrar el
+            esqueleto) cada vez que volves a algo que ya habias
+            visitado. Asi, cada pagina pide sus datos una sola vez al
+            arrancar la app, y navegar es instantaneo. */}
+        <div hidden={!!proyectoAbiertoId || pestanaActiva !== "proyectos"}>
+          <ProyectosPage onVerTareas={abrirProyecto} />
         </div>
-        <div hidden={pestanaActiva !== "usuarios"}>
+        <div hidden={!!proyectoAbiertoId || pestanaActiva !== "usuarios"}>
           <UsuariosPage />
         </div>
-        <div hidden={pestanaActiva !== "tareas"}>
-          <TareasPage />
+        <div hidden={!proyectoAbiertoId}>
+          <TareasPage proyectoAbiertoId={proyectoAbiertoId} onVolver={volverAProyectos} />
         </div>
       </main>
     </div>

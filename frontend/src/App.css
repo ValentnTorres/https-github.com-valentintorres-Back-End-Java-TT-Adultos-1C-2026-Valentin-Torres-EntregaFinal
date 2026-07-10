@@ -321,6 +321,26 @@
   font-size: 14px;
 }
 
+/* Nombre/descripcion del proyecto, ahora clickeable (lleva a sus
+   tareas): reseteamos el look de boton para que se vea igual que
+   antes (cuando era un <div> comun), solo que con cursor de link y un
+   subrayado sutil al pasar el mouse como pista de que se puede clickear. */
+.proyecto-info-boton {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.proyecto-info-boton:hover strong {
+  text-decoration: underline;
+}
+
 .fila-usuario {
   display: flex;
   align-items: center;
@@ -414,7 +434,23 @@
 }
 
 .tablero-titulo-bloque h2 {
-  margin: 0;
+  margin: 4px 0 0;
+}
+
+/* Boton para salir del tablero de un proyecto y volver a la lista de
+   Proyectos (cada proyecto es un tablero aislado, no hay una vista con
+   todo mezclado a la que "escapar" de otra forma). */
+.volver-proyectos {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--cds-gray-70);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.volver-proyectos:hover {
+  color: var(--cds-blue-60);
 }
 
 .tablero-meta {
@@ -443,8 +479,7 @@
   flex-wrap: wrap;
 }
 
-.input-busqueda,
-.select-filtro {
+.input-busqueda {
   background: var(--cds-white);
   border: 1px solid var(--cds-gray-20);
   padding: 0 12px;
@@ -452,17 +487,14 @@
   font-size: 14px;
   color: var(--cds-gray-100);
   transition: border-color 110ms var(--easing);
-}
-
-.input-busqueda {
   width: 220px;
 }
 
-.input-busqueda:focus,
-.select-filtro:focus {
+.input-busqueda:focus {
   outline: none;
   border-color: var(--cds-blue-60);
 }
+
 
 .boton-primario {
   border: none;
@@ -702,11 +734,6 @@
   padding: 3px 8px;
 }
 
-.etiqueta-proyecto {
-  background: var(--cds-blue-20);
-  color: var(--cds-blue-70);
-}
-
 .etiqueta-fecha {
   text-transform: none;
   font-weight: 400;
@@ -905,6 +932,52 @@
 }
 
 .columna-nueva-botones button[type="button"]:hover {
+  background: var(--cds-gray-90);
+}
+
+/* Composer de "agregar tarea rapido" al pie de cada columna (estilo
+   Trello: solo el titulo, sin abrir el formulario grande de arriba). */
+.tarea-rapida-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.tarea-rapida-form input {
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.tarea-rapida-form input:focus {
+  outline: none;
+  border-color: var(--cds-blue-60);
+}
+
+.tarea-rapida-botones {
+  display: flex;
+  gap: 8px;
+}
+
+.tarea-rapida-botones button {
+  border: none;
+  padding: 6px 12px;
+  font-size: 13px;
+  background: var(--cds-blue-60);
+  color: var(--cds-white);
+}
+
+.tarea-rapida-botones button:hover {
+  background: var(--cds-blue-70);
+}
+
+.tarea-rapida-botones button[type="button"] {
+  background: var(--cds-gray-100);
+}
+
+.tarea-rapida-botones button[type="button"]:hover {
   background: var(--cds-gray-90);
 }
 
@@ -1119,4 +1192,158 @@
   to {
     opacity: 1;
   }
+}
+
+/* --- InputFecha: selector de fecha con calendario propio --- */
+
+.input-fecha-contenedor {
+  position: relative;
+  /* Le dice al navegador que este widget es a proposito de tema claro
+     (buena practica general, no hace nada para el bug de abajo). */
+  color-scheme: light;
+}
+
+/* Los botones de aca abajo (.input-fecha-boton, .input-fecha-dia, etc)
+   son <button> que viven adentro de .formulario/.tarea-rapida-form, asi
+   que sin querer tambien los agarran las reglas genericas ".formulario
+   button" / ".formulario button[type=button]" / ".tarea-rapida-botones
+   button" (pensadas para "Guardar"/"Cancelar"/"Agregar tarea"), que
+   tienen mas o igual especificidad y les pisaban el fondo/color/tamaño
+   (se veian negros, en negrita, y con el padding de un boton de 40px
+   de alto en vez del suyo propio). Por eso el !important aca: no hay
+   forma prolija de ganarles la pulseada de especificidad a esas reglas
+   sin tocarlas (y tocarlas rompería los botones que si deben verse asi). */
+.input-fecha-boton {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 100% !important;
+  height: auto !important;
+  align-self: auto !important;
+  box-sizing: border-box !important;
+  background: var(--cds-gray-10) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--cds-gray-50) !important;
+  padding: 11px 16px !important;
+  color: var(--cds-gray-100) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  text-align: left !important;
+  cursor: pointer;
+  transition: border-color 110ms var(--easing), background-color 110ms var(--easing);
+}
+
+.input-fecha-boton:hover {
+  background: var(--cds-gray-20) !important;
+}
+
+.input-fecha-calendario {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  width: 240px;
+  box-sizing: border-box;
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  box-shadow: 0 4px 12px rgba(22, 22, 22, 0.16);
+  padding: 12px;
+}
+
+.input-fecha-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cds-gray-100);
+}
+
+.input-fecha-header button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: auto !important;
+  align-self: auto !important;
+  border: none !important;
+  background: none !important;
+  font-size: 16px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  color: var(--cds-gray-70) !important;
+  padding: 2px 8px !important;
+  cursor: pointer;
+}
+
+.input-fecha-header button:hover {
+  color: var(--cds-blue-60) !important;
+  background: none !important;
+}
+
+.input-fecha-grilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  width: 100%;
+}
+
+.input-fecha-dia-nombre {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 10px;
+  color: var(--cds-gray-50);
+  padding: 4px 0;
+}
+
+.input-fecha-dia {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: block !important;
+  width: 100% !important;
+  height: 28px !important;
+  align-self: auto !important;
+  box-sizing: border-box !important;
+  border: none !important;
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 28px !important;
+  color: var(--cds-gray-100) !important;
+  cursor: pointer;
+}
+
+.input-fecha-dia:hover {
+  background: var(--cds-blue-10) !important;
+}
+
+.input-fecha-dia--activo,
+.input-fecha-dia--activo:hover {
+  background: var(--cds-blue-60) !important;
+  color: var(--cds-white) !important;
+}
+
+.input-fecha-limpiar {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  align-self: auto !important;
+  box-sizing: border-box !important;
+  margin-top: 8px;
+  border: none !important;
+  background: none !important;
+  color: var(--cds-red-60) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  padding: 6px 0 !important;
+  cursor: pointer;
+  text-align: center;
+}
+
+.input-fecha-limpiar:hover {
+  text-decoration: underline;
 }

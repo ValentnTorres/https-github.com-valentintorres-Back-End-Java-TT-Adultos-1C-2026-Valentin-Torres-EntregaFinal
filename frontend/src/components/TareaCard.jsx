@@ -35,14 +35,17 @@ function TareaCard({
           desde cualquier parte de la tarjeta). */}
       <span className="tarjeta-agarre" aria-hidden="true">⠿</span>
 
-      <div className="tarjeta-etiquetas">
-        <span className="etiqueta etiqueta-proyecto">{tarea.proyecto.nombre}</span>
-        {estadoFecha && (
+      {/* Ya no hay etiqueta de proyecto aca: todas las tarjetas de este
+          tablero son del mismo proyecto (cada proyecto tiene su propio
+          tablero aislado), asi que mostrarlo en cada tarjeta era
+          redundante. */}
+      {estadoFecha && (
+        <div className="tarjeta-etiquetas">
           <span className={`etiqueta etiqueta-fecha etiqueta-fecha--${estadoFecha.variante} dato-mono`}>
             {estadoFecha.texto}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       <h3 className="tarjeta-titulo">{tarea.titulo}</h3>
       {tarea.descripcion && <p className="tarjeta-descripcion">{tarea.descripcion}</p>}

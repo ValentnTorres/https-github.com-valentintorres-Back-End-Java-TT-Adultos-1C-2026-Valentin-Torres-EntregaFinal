@@ -19,7 +19,7 @@ const FORM_VACIO = { nombre: "", descripcion: "" };
 // que se ve peor que el salto (minimo) de ir de 1 fila esqueleto a 1 fila real.
 const FILAS_ESQUELETO = 1;
 
-function ProyectosPage() {
+function ProyectosPage({ onVerTareas }) {
   const [proyectos, setProyectos] = useState([]);
   const [form, setForm] = useState(FORM_VACIO);
   const [idEnEdicion, setIdEnEdicion] = useState(null);
@@ -99,7 +99,10 @@ function ProyectosPage() {
     <section>
       <div className="encabezado-seccion">
         <h2>Proyectos</h2>
-        <p className="subtitulo">Agrupá el trabajo en proyectos para después organizar las tareas dentro de cada uno.</p>
+        <p className="subtitulo">
+          Agrupá el trabajo en proyectos para después organizar las tareas dentro de cada uno. Hacé click en un
+          proyecto para ver sus tareas.
+        </p>
       </div>
 
       <form className="formulario" onSubmit={manejarSubmit}>
@@ -154,10 +157,15 @@ function ProyectosPage() {
         {!cargando &&
           proyectos.map((proyecto) => (
             <li key={proyecto.id} className="fade-in-suave">
-              <div>
+              <button
+                type="button"
+                className="proyecto-info-boton"
+                onClick={() => onVerTareas(proyecto.id)}
+                title="Ver las tareas de este proyecto"
+              >
                 <strong>{proyecto.nombre}</strong>
                 {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
-              </div>
+              </button>
               <div className="acciones">
                 <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
                 <button onClick={() => manejarEliminar(proyecto)}>Eliminar</button>

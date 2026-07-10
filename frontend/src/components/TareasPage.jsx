@@ -1,14 +1,21 @@
-// Pagina de Tareas: tablero Kanban con columnas creadas por el
+// Tablero Kanban de un proyecto puntual: columnas creadas por el
 // usuario (como las listas de Trello), no un enum fijo de 3 estados.
 //
+// Cada proyecto tiene su propio tablero aislado (se entra clickeando
+// el proyecto desde la pestaña Proyectos, ver App.jsx/proyectoAbiertoId):
+// las tareas de otros proyectos nunca se mezclan aca. Las columnas si
+// son compartidas por toda la app (no son "del proyecto"), asi que el
+// pipeline (Pendiente/En progreso/Completada, o las que se hayan
+// creado) es el mismo para todos los tableros.
+//
 // Ademas del CRUD de Tarea, esta pagina maneja:
-//  - la relacion ManyToOne con Proyecto (un select en el formulario, y
-//    un filtro de solo-lectura en la barra superior)
 //  - la relacion ManyToOne con Columna (crear, renombrar, marcar como
 //    "final", reordenar y borrar columnas; mover una tarea de columna
 //    arrastrandola, con los botones ◀ ▶, o con "Agregar tarea")
 //  - la relacion ManyToMany con Usuario (asignar/desasignar usuarios
-//    a cada tarea, con un select + boton en cada tarjeta)
+//    a cada tarea, con un select + boton en cada tarjeta) - un mismo
+//    usuario puede estar asignado a varias tareas sin problema, la
+//    unica regla es no repetirlo dos veces en la MISMA tarea
 //  - busqueda por titulo, que atenua (no oculta) las tarjetas que no matchean
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -31,6 +38,7 @@ import { listarUsuarios } from "../api/usuariosApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
 import TareaCard from "./TareaCard";
+import InputFecha from "./InputFecha";
 import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
 
 // Cantidad de columnas/tarjetas esqueleto mientras carga el tablero por
@@ -45,11 +53,10 @@ function formVacio(columnaIdInicial = "") {
     descripcion: "",
     columnaId: columnaIdInicial,
     fechaLimite: "",
-    proyectoId: "",
   };
 }
 
-function TareasPage() {
+function TareasPage({ proyectoAbiertoId, onVolver }) {
   const [tareas, setTareas] = useState([]);
   const [columnas, setColumnas] = useState([]);
   const [proyectos, setProyectos] = useState([]);
@@ -58,7 +65,6 @@ function TareasPage() {
   const [idEnEdicion, setIdEnEdicion] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroProyectoId, setFiltroProyectoId] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
   // Guarda que usuario esta seleccionado en el select de "asignar"
@@ -74,6 +80,15 @@ function TareasPage() {
   // final del tablero).
   const [creandoColumna, setCreandoColumna] = useState(false);
   const [nombreColumnaNueva, setNombreColumnaNueva] = useState("");
+  // Id de la columna donde se esta escribiendo una tarea nueva "rapida"
+  // (estilo Trello: titulo + fecha limite opcional, aparece al pie de
+  // esa columna). Es ademas del formulario grande de arriba (que
+  // tambien deja elegir Descripcion y Columna): las dos formas de
+  // crear una tarea conviven, esta es solo un atajo para el caso comun
+  // de "quiero anotar algo ya" sin llenar todos los campos.
+  const [columnaCreandoTareaId, setColumnaCreandoTareaId] = useState(null);
+  const [tituloTareaRapida, setTituloTareaRapida] = useState("");
+  const [fechaTareaRapida, setFechaTareaRapida] = useState("");
 
   async function cargarDatos() {
     try {
@@ -98,29 +113,36 @@ function TareasPage() {
     cargarDatos();
   }, []);
 
-  // Usuarios que tienen al menos una tarea asignada en todo el tablero,
-  // para mostrar la pila de avatares del encabezado (sin inventar datos:
-  // sale directo de las asignaciones reales).
+  // Nombre del proyecto cuyo tablero se esta mostrando.
+  const nombreProyecto = proyectos.find((p) => p.id === proyectoAbiertoId)?.nombre;
+
+  // Aislamiento entre proyectos: de toda la lista de tareas (que trae
+  // las de todos los proyectos), nos quedamos solo con las de este.
+  // Las de otros proyectos nunca llegan a mostrarse en este tablero.
+  const tareasDelProyecto = useMemo(
+    () => tareas.filter((tarea) => tarea.proyecto.id === proyectoAbiertoId),
+    [tareas, proyectoAbiertoId]
+  );
+
+  // Usuarios que tienen al menos una tarea asignada EN ESTE proyecto,
+  // para mostrar la pila de avatares del encabezado (sin inventar
+  // datos: sale directo de las asignaciones reales de este tablero).
   const usuariosActivos = useMemo(() => {
     const vistos = new Map();
-    for (const tarea of tareas) {
+    for (const tarea of tareasDelProyecto) {
       for (const usuario of tarea.usuariosAsignados) {
         vistos.set(usuario.id, usuario);
       }
     }
     return [...vistos.values()];
-  }, [tareas]);
+  }, [tareasDelProyecto]);
 
   const busquedaNormalizada = busqueda.trim().toLowerCase();
 
   const tareasVisibles = useMemo(() => {
-    return tareas.filter((tarea) => {
-      const coincideProyecto = !filtroProyectoId || String(tarea.proyecto.id) === filtroProyectoId;
-      const coincideBusqueda =
-        !busquedaNormalizada || tarea.titulo.toLowerCase().includes(busquedaNormalizada);
-      return coincideProyecto && coincideBusqueda;
-    });
-  }, [tareas, filtroProyectoId, busquedaNormalizada]);
+    if (!busquedaNormalizada) return tareasDelProyecto;
+    return tareasDelProyecto.filter((tarea) => tarea.titulo.toLowerCase().includes(busquedaNormalizada));
+  }, [tareasDelProyecto, busquedaNormalizada]);
 
   function manejarCambio(evento) {
     const { name, value } = evento.target;
@@ -131,14 +153,16 @@ function TareasPage() {
     evento.preventDefault();
     setError("");
 
-    // El backend espera proyecto/columna como un objeto { id: ... },
-    // no solo el numero, porque son relaciones ManyToOne de la entidad Tarea.
+    // El backend espera columna/proyecto como un objeto { id: ... }, no
+    // solo el numero, porque son relaciones ManyToOne de la entidad
+    // Tarea. El proyecto es siempre el de este tablero: no hace falta
+    // pedirselo al usuario, ya esta implicito en donde esta parado.
     const body = {
       titulo: form.titulo,
       descripcion: form.descripcion,
       columna: { id: Number(form.columnaId) },
       fechaLimite: form.fechaLimite || null,
-      proyecto: { id: Number(form.proyectoId) },
+      proyecto: { id: proyectoAbiertoId },
     };
 
     try {
@@ -156,21 +180,64 @@ function TareasPage() {
     }
   }
 
+  // Version "rapida" de crear tarea: solo pide el titulo (la columna ya
+  // se sabe, es la de donde se clickeo "+ Agregar tarea"), sin abrir el
+  // formulario grande. Al estilo Trello, el cuadrito de texto se queda
+  // abierto despues de crear una tarea, listo para escribir la
+  // siguiente sin tener que volver a clickear "+ Agregar tarea".
+  async function manejarCrearTareaRapida(evento, columnaId) {
+    evento.preventDefault();
+    if (!tituloTareaRapida.trim()) return;
+    setError("");
+    try {
+      await crearTarea({
+        titulo: tituloTareaRapida.trim(),
+        descripcion: "",
+        columna: { id: columnaId },
+        fechaLimite: fechaTareaRapida || null,
+        proyecto: { id: proyectoAbiertoId },
+      });
+      setTituloTareaRapida("");
+      setFechaTareaRapida("");
+      await cargarDatos();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function empezarCrearTareaRapida(columnaId) {
+    // Si el formulario grande estaba abierto, lo cerramos: las dos
+    // formas de crear una tarea no tiene sentido tenerlas abiertas
+    // juntas al mismo tiempo.
+    cancelarEdicion();
+    setColumnaCreandoTareaId(columnaId);
+    setTituloTareaRapida("");
+    setFechaTareaRapida("");
+  }
+
+  function cancelarTareaRapida() {
+    setColumnaCreandoTareaId(null);
+    setTituloTareaRapida("");
+    setFechaTareaRapida("");
+  }
+
   function empezarEdicion(tarea) {
+    cancelarTareaRapida();
     setIdEnEdicion(tarea.id);
     setForm({
       titulo: tarea.titulo,
       descripcion: tarea.descripcion ?? "",
       columnaId: String(tarea.columna.id),
       fechaLimite: tarea.fechaLimite ?? "",
-      proyectoId: String(tarea.proyecto.id),
     });
     setMostrarFormulario(true);
   }
 
-  // Abre el panel de creacion con la columna de destino ya seleccionada
-  // (boton "+ Agregar tarea" al pie de cada columna).
+  // Abre el formulario grande de creacion (boton "+ Nueva tarea" de
+  // arriba). El "agregar rapido" de cada columna (mas abajo) es un
+  // atajo aparte, no pasa por aca.
   function abrirFormularioNuevo(columnaIdInicial) {
+    cancelarTareaRapida();
     setIdEnEdicion(null);
     setForm(formVacio(columnaIdInicial ?? String(columnas[0]?.id ?? "")));
     setMostrarFormulario(true);
@@ -340,7 +407,10 @@ function TareasPage() {
     <section>
       <div className="tablero-toolbar">
         <div className="tablero-titulo-bloque">
-          <h2>Tareas</h2>
+          <button type="button" className="volver-proyectos" onClick={onVolver}>
+            ← Volver a Proyectos
+          </button>
+          <h2>{cargando ? <Skeleton width="180px" height="28px" /> : nombreProyecto ?? "Proyecto"}</h2>
           <div className="tablero-meta">
             {usuariosActivos.length > 0 && (
               <div className="avatares-pila" title={usuariosActivos.map((u) => u.nombre).join(", ")}>
@@ -363,7 +433,7 @@ function TareasPage() {
               <Skeleton width="70px" height="12px" />
             ) : (
               <span className="tablero-contador dato-mono">
-                {tareasVisibles.length} / {tareas.length} tareas
+                {tareasVisibles.length} / {tareasDelProyecto.length} tareas
               </span>
             )}
           </div>
@@ -377,18 +447,6 @@ function TareasPage() {
             value={busqueda}
             onChange={(evento) => setBusqueda(evento.target.value)}
           />
-          <select
-            className="select-filtro"
-            value={filtroProyectoId}
-            onChange={(evento) => setFiltroProyectoId(evento.target.value)}
-          >
-            <option value="">Todos los proyectos</option>
-            {proyectos.map((proyecto) => (
-              <option key={proyecto.id} value={proyecto.id}>
-                {proyecto.nombre}
-              </option>
-            ))}
-          </select>
           <button
             type="button"
             className="boton-primario"
@@ -439,32 +497,11 @@ function TareasPage() {
           </div>
           <div className="campo">
             <label htmlFor="fecha-tarea">Fecha límite</label>
-            <input
+            <InputFecha
               id="fecha-tarea"
-              name="fechaLimite"
-              type="date"
               value={form.fechaLimite}
-              onChange={manejarCambio}
+              onChange={(iso) => setForm((formActual) => ({ ...formActual, fechaLimite: iso }))}
             />
-          </div>
-          <div className="campo">
-            <label htmlFor="proyecto-tarea">Proyecto</label>
-            <select
-              id="proyecto-tarea"
-              name="proyectoId"
-              value={form.proyectoId}
-              onChange={manejarCambio}
-              required
-            >
-              <option value="" disabled>
-                Seleccionar proyecto
-              </option>
-              {proyectos.map((proyecto) => (
-                <option key={proyecto.id} value={proyecto.id}>
-                  {proyecto.nombre}
-                </option>
-              ))}
-            </select>
           </div>
           <div className="campo campo-boton">
             <button type="submit">{idEnEdicion ? "Guardar cambios" : "Crear tarea"}</button>
@@ -583,7 +620,7 @@ function TareasPage() {
               <div className="columna-cuerpo">
                 {tareasDeLaColumna.length === 0 && (
                   <p className="columna-vacia">
-                    {tareas.some((t) => t.columna.id === columna.id) ? "Sin resultados" : "Sin tareas"}
+                    {tareasDelProyecto.some((t) => t.columna.id === columna.id) ? "Sin resultados" : "Sin tareas"}
                   </p>
                 )}
 
@@ -617,13 +654,34 @@ function TareasPage() {
                   );
                 })}
 
-                <button
-                  type="button"
-                  className="boton-agregar-columna"
-                  onClick={() => abrirFormularioNuevo(String(columna.id))}
-                >
-                  + Agregar tarea
-                </button>
+                {columnaCreandoTareaId === columna.id ? (
+                  <form className="tarea-rapida-form" onSubmit={(evento) => manejarCrearTareaRapida(evento, columna.id)}>
+                    <input
+                      autoFocus
+                      placeholder="Título de la tarea"
+                      value={tituloTareaRapida}
+                      onChange={(evento) => setTituloTareaRapida(evento.target.value)}
+                      onKeyDown={(evento) => {
+                        if (evento.key === "Escape") cancelarTareaRapida();
+                      }}
+                    />
+                    <InputFecha title="Fecha límite (opcional)" value={fechaTareaRapida} onChange={setFechaTareaRapida} />
+                    <div className="tarea-rapida-botones">
+                      <button type="submit">Agregar tarea</button>
+                      <button type="button" onClick={cancelarTareaRapida}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    className="boton-agregar-columna"
+                    onClick={() => empezarCrearTareaRapida(columna.id)}
+                  >
+                    + Agregar tarea
+                  </button>
+                )}
               </div>
             </div>
           );

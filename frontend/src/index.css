@@ -10,6 +10,14 @@
    datos (fechas, contadores), y un verde de estado (--cds-green-60,
    tambien un token real de Carbon) para el tablero de tareas. */
 :root {
+  /* La app es solo tema claro (no hay modo oscuro implementado). Sin
+     esto, algunos navegadores re-tematizan automaticamente los
+     controles nativos (button, input, select) a un dark mode propio
+     cuando el sistema operativo esta en modo oscuro, ignorando el
+     background/color que les pusimos - se ve como texto blanco en
+     negrita sobre fondo negro en botones que deberian ser claros. */
+  color-scheme: light;
+
   --cds-blue-60: #0f62fe;
   --cds-blue-70: #0043ce;
   --cds-blue-10: #edf5ff;
