@@ -2,6 +2,17 @@
 
 Proyecto final del curso de Back-End Java (Talento Tech Buenos Aires). Es una aplicación full stack: una API REST hecha con **Spring Boot + MySQL** y un frontend en **React (Vite)** que la consume.
 
+## 🚀 Demo en vivo
+
+| | |
+|---|---|
+| **Frontend** | https://valentintorres-backend-java-entrega.vercel.app/ |
+| **API (backend)** | https://java-entregafinal-valentintorres.onrender.com/api |
+
+> ⚠️ **El backend está en el free tier de Render**, que "duerme" el servicio a los ~15 minutos sin recibir requests. Si hace un rato que nadie entra, el **primer** pedido (ya sea abriendo el frontend o pegándole directo a la API) puede tardar **30 a 60 segundos** en responder mientras el servidor se despierta. No está roto, solo hay que esperar ese primer arranque — el frontend incluso muestra una pantalla propia avisando que esto puede pasar. Una vez despierto responde normal.
+
+Para probar la API directo (sin pasar por el frontend), ver la sección [Ejemplos de uso](#ejemplos-de-uso-datos-de-prueba) más abajo: los mismos `curl` sirven contra `localhost:8080` o contra la URL de Render de arriba, cambiando solo la base.
+
 ## Descripción del proyecto
 
 Permite administrar **Proyectos**, **Columnas**, **Usuarios** y **Tareas**. El tablero de tareas es un Kanban al estilo Trello: las columnas (`Pendiente`, `En progreso`, `Completada` por defecto) no son un valor fijo, se pueden crear, renombrar, reordenar y borrar desde la interfaz.
@@ -9,7 +20,7 @@ Permite administrar **Proyectos**, **Columnas**, **Usuarios** y **Tareas**. El t
 - Un `Proyecto` agrupa varias `Tarea` (relación `@ManyToOne`: cada tarea pertenece a un solo proyecto).
 - Una `Tarea` pertenece a una `Columna` (relación `@ManyToOne`: en qué columna del tablero está). Una `Columna` puede marcarse como `esFinal` (por ejemplo "Completada").
 - Una `Tarea` puede tener varios `Usuario` asignados, y un usuario puede estar en varias tareas (relación `@ManyToMany`).
-- Reglas de negocio: no se puede asignar un usuario a una tarea que está en una columna marcada como `esFinal`, ni asignar dos veces al mismo usuario a la misma tarea, ni borrar una columna que todavía tiene tareas.
+- Reglas de negocio: no se puede asignar un usuario a una tarea que está en una columna marcada como `esFinal`, ni asignar dos veces al mismo usuario a la misma tarea, ni borrar una columna que todavía tiene tareas, ni borrar un usuario que todavía está asignado a alguna tarea.
 
 Cumple los tres niveles de la consigna:
 
@@ -17,9 +28,30 @@ Cumple los tres niveles de la consigna:
 - **Intermedio**: relación `@ManyToOne` (Tarea-Proyecto y Tarea-Columna), validaciones con Hibernate Validator, excepciones personalizadas.
 - **Avanzado**: relación `@ManyToMany` (Tarea-Usuario) con validación de negocio propia, manejo centralizado de errores con `@ControllerAdvice`, y CORS configurado para que el frontend (otro origen) pueda consumir la API.
 
-Además, como extra por fuera de la consigna, la API está protegida con **autenticación JWT** (Spring Security): hay que registrarse/loguearse para poder usarla. Ver la sección [Autenticación](#autenticación).
+Además, como extra por fuera de la consigna, la API está protegida con **autenticación JWT** (Spring Security) y todo el proyecto está **desplegado en la nube** (no solo corriendo en local). Ver las secciones [Autenticación](#autenticación) y [Cómo fue el desarrollo](#cómo-fue-el-desarrollo).
 
-> **Nota sobre el esquema:** si ya tenías la base `gestor_tareas` creada de una versión anterior (cuando el estado de la tarea era un enum fijo en vez de la entidad `Columna`), borrala y dejá que Hibernate la recree (`DROP DATABASE gestor_tareas;`), porque cambió la forma de la tabla `tareas`.
+## Cómo fue el desarrollo
+
+El punto de partida fue lo que pedía la consigna: CRUD completo de Proyecto/Usuario/Tarea/Columna con Spring Boot y MySQL, sumando de a poco las relaciones (`@ManyToOne`, `@ManyToMany`) y las reglas de negocio hasta cubrir el nivel avanzado.
+
+A partir de ahí fui sumando cosas por mi cuenta, no pedidas por la consigna, para dejar el proyecto más redondo:
+
+**Autenticación JWT.** Le agregué login con Spring Security: cada `Usuario` pasó a ser también una cuenta (con contraseña hasheada con BCrypt), y toda la API quedó protegida detrás de un token, salvo el registro y el login. Esto implicó tocar el modelo de `Usuario`, sumar un filtro de seguridad (`JwtAuthFilter`) y adaptar el frontend para manejar sesión (login, logout, y mandar el token en cada request).
+
+**Una batería de pruebas manual.** Antes de dar el proyecto por cerrado, probé a mano todos los casos de uso que se me ocurrieron: CRUD normal, casos límite (ids inexistentes, campos vacíos, objetos anidados sin `id`), y las 4 reglas de negocio documentadas. Encontré 2 bugs reales:
+  - Crear una tarea mandando `"proyecto": {}` (un objeto vacío, sin `id`) tiraba un error 500 con un mensaje técnico interno en vez de un 400 entendible.
+  - Borrar un usuario que todavía estaba asignado a alguna tarea rompía con una violación de foreign key de MySQL cruda, en vez de avisar con un mensaje claro (ya existía esa protección para columnas, pero no para usuarios).
+
+  Los arreglé los dos agregando validaciones explícitas en los services correspondientes.
+
+**Deploy en la nube.** Quise que el proyecto no dependiera de mi máquina para poder mostrarlo, así que lo separé en 3 servicios independientes:
+  - **[Clever Cloud](https://www.clever-cloud.com/)** para la base MySQL (plan gratuito "Dev").
+  - **[Render](https://render.com/)** para el backend, como imagen Docker (`backend/Dockerfile`).
+  - **[Vercel](https://vercel.com/)** para el frontend (build estático de Vite).
+
+  El camino no fue derecho: el plan gratuito de MySQL de Clever Cloud limita a **5 conexiones concurrentes**, y Spring Boot abre un pool de conexiones (HikariCP) de 10 por defecto — el backend ni arrancaba, explotaba con `max_user_connections` apenas Hibernate intentaba crear las tablas. Tuve que bajar el pool a 2 conexiones (de sobra para un proyecto de este tamaño, que no tiene concurrencia real) en `application.properties`. En el medio también me encontré con conexiones colgadas de intentos de deploy anteriores que agotaban el límite igual, que tuve que ir a matar a mano desde la consola de phpMyAdmin (`SHOW PROCESSLIST` + `KILL`).
+
+  También hubo un round de ajustes más simples: el JWT necesitaba una clave de al menos 256 bits (probé con una más corta al principio y explotó), el puerto lo asigna Render dinámicamente (`server.port=${PORT:8080}`), y CORS necesitaba conocer el dominio público del frontend además de `localhost`.
 
 ## Estructura del repositorio
 
@@ -28,7 +60,9 @@ backend/    -> API REST (Spring Boot)
 frontend/   -> Interfaz web (React + Vite)
 ```
 
-## Cómo ejecutar el backend
+## Cómo ejecutar en local
+
+### Backend
 
 Requisitos: Java 17 y MySQL corriendo en `localhost:3306`.
 
@@ -44,9 +78,9 @@ Requisitos: Java 17 y MySQL corriendo en `localhost:3306`.
    ```
 4. La API queda escuchando en `http://localhost:8080`.
 
-Al arrancar, Hibernate crea automáticamente las tablas (`usuarios`, `proyectos`, `tareas`, `tarea_usuario`) según las entidades.
+Al arrancar, Hibernate crea automáticamente las tablas (`usuarios`, `proyectos`, `tareas`, `columnas`, `tarea_usuario`) según las entidades.
 
-## Cómo ejecutar el frontend
+### Frontend
 
 Requisitos: Node.js.
 
@@ -58,37 +92,35 @@ npm run dev
 
 El frontend queda disponible en `http://localhost:5173` y ya está configurado para llamar a la API en `http://localhost:8080` (ver `frontend/src/api/config.js`). Para que funcione, el backend tiene que estar corriendo.
 
-## Deploy (3 servicios separados, sin tarjeta)
+## Deploy
 
-El proyecto está preparado para desplegarse como 3 servicios independientes: **MySQL**, **backend** y **frontend**. Ninguno de los tres necesita cambios de código, solo configurar variables de entorno desde el dashboard de cada plataforma. Stack elegido: **Clever Cloud** (MySQL), **Render** (backend) y **Vercel/Netlify** (frontend).
+El proyecto ya está desplegado (ver [Demo en vivo](#-demo-en-vivo) arriba) usando 3 servicios independientes, sin necesitar tarjeta de crédito en ninguno:
 
-> Las políticas de "gratis sin tarjeta" de estas plataformas cambian seguido (Aiven, por ejemplo, ahora pide tarjeta para el free tier) — conviene verificarlo al registrarse.
+1. **Base de datos ([Clever Cloud](https://console.clever-cloud.com), addon MySQL plan "Dev")**: el add-on expone el host, puerto, usuario, contraseña y nombre de la base (variables tipo `MYSQL_ADDON_HOST`, `MYSQL_ADDON_PORT`, `MYSQL_ADDON_USER`, `MYSQL_ADDON_PASSWORD`, `MYSQL_ADDON_DB`).
 
-1. **Base de datos (Clever Cloud, addon MySQL plan "Dev")**: registrarse en [console.clever-cloud.com](https://console.clever-cloud.com), crear un **Add-on → MySQL → plan Dev** (gratis). En la pestaña de información/variables del add-on quedan expuestos el host, puerto, usuario, contraseña y nombre de la base (variables tipo `MYSQL_ADDON_HOST`, `MYSQL_ADDON_PORT`, `MYSQL_ADDON_USER`, `MYSQL_ADDON_PASSWORD`, `MYSQL_ADDON_DB` — los nombres exactos pueden variar, fijarse en el panel).
-
-2. **Backend (Render.com, Web Service gratis)**: crear un servicio nuevo de tipo **Docker**, apuntando a este repo con **Root Directory = `backend`** (usa el `backend/Dockerfile` que ya está en el repo). Variables de entorno a setear, con los valores que dio Clever Cloud en el paso 1:
+2. **Backend ([Render](https://render.com), Web Service gratis, tipo Docker)**: apunta a este repo con **Root Directory = `backend`** (usa el `backend/Dockerfile`). Variables de entorno:
 
    | Variable | Valor |
    |---|---|
-   | `MYSQLHOST` | `MYSQL_ADDON_HOST` de Clever Cloud |
-   | `MYSQLPORT` | `MYSQL_ADDON_PORT` de Clever Cloud |
-   | `MYSQLUSER` | `MYSQL_ADDON_USER` de Clever Cloud |
-   | `MYSQLPASSWORD` | `MYSQL_ADDON_PASSWORD` de Clever Cloud |
-   | `MYSQLDATABASE` | `MYSQL_ADDON_DB` de Clever Cloud |
-   | `JWT_SECRET` | una clave propia para producción (no reusar la que quedó commiteada) |
-   | `FRONTEND_URL` | la URL pública que te asigne Vercel/Netlify al frontend (para CORS) |
+   | `MYSQLHOST` | host de Clever Cloud |
+   | `MYSQLPORT` | puerto de Clever Cloud |
+   | `MYSQLUSER` | usuario de Clever Cloud |
+   | `MYSQLPASSWORD` | contraseña de Clever Cloud |
+   | `MYSQLDATABASE` | nombre de la base de Clever Cloud |
+   | `JWT_SECRET` | clave propia de al menos 32 caracteres (256 bits) |
+   | `FRONTEND_URL` | URL pública del frontend en Vercel (para CORS) |
 
-   `PORT` la define Render solo, no hace falta setearla. Nota: el free tier de Render "duerme" el servicio a los ~15 min sin requests, así que el primer pedido después de un rato de inactividad tarda unos 30-60 segundos en responder (se está "despertando").
+   `PORT` la define Render solo, no hace falta setearla.
 
-3. **Frontend (Vercel o Netlify)**: importar el repo, con **Root Directory = `frontend`**. Ambos detectan Vite solos (`npm run build`, carpeta de salida `dist`). Variable de entorno a setear:
+3. **Frontend ([Vercel](https://vercel.com)/Netlify)**: **Root Directory = `frontend`**, detecta Vite solo (`npm run build`, carpeta `dist`). Variable de entorno:
 
    | Variable | Valor |
    |---|---|
-   | `VITE_API_BASE_URL` | la URL pública del backend en Render + `/api` (ej. `https://gestor-tareas-backend.onrender.com/api`) |
+   | `VITE_API_BASE_URL` | URL pública del backend en Render + `/api` |
 
-   Importante: como Vite solo "hornea" las variables `VITE_*` en el momento del build, si cambiás `VITE_API_BASE_URL` después hay que redesplegar el frontend (no alcanza con reiniciarlo).
+   Como Vite "hornea" las variables `VITE_*` en el momento del build, cambiar esta variable requiere volver a desplegar (no alcanza con reiniciar).
 
-> **Alternativa paga:** si en algún momento preferís no lidiar con el "sleep" del free tier ni con la incertidumbre de qué proveedor de MySQL sigue siendo gratis, Railway permite tener los 3 servicios (incluyendo MySQL como plugin nativo) en un solo dashboard por un consumo que para un proyecto de este tamaño ronda centavos por mes — la configuración es la misma (mismas variables de entorno), solo cambia dónde las cargás.
+> **Alternativa:** Railway permite tener los 3 servicios (incluyendo MySQL como plugin nativo) en un solo dashboard, pero requiere tarjeta de crédito una vez agotado el crédito de prueba gratuito.
 
 ## Autenticación
 
@@ -120,7 +152,7 @@ todas las llamadas a la API (ver `frontend/src/api/config.js`).
 | GET    | `/api/proyectos`                         | Listar proyectos                          | Sí   |
 | POST   | `/api/proyectos`                         | Crear proyecto                            | Sí   |
 | PUT    | `/api/proyectos/{id}`                    | Editar proyecto                           | Sí   |
-| DELETE | `/api/proyectos/{id}`                    | Eliminar proyecto                         | Sí   |
+| DELETE | `/api/proyectos/{id}`                    | Eliminar proyecto (borra en cascada sus tareas) | Sí |
 | GET    | `/api/columnas`                          | Listar columnas del tablero (ordenadas)   | Sí   |
 | POST   | `/api/columnas`                          | Crear columna                             | Sí   |
 | PUT    | `/api/columnas/{id}`                     | Renombrar columna / marcarla como final   | Sí   |
@@ -129,7 +161,7 @@ todas las llamadas a la API (ver `frontend/src/api/config.js`).
 | GET    | `/api/usuarios`                          | Listar usuarios                           | Sí   |
 | POST   | `/api/usuarios`                          | Crear usuario (registro de cuenta)        | No   |
 | PUT    | `/api/usuarios/{id}`                     | Editar usuario                            | Sí   |
-| DELETE | `/api/usuarios/{id}`                     | Eliminar usuario                          | Sí   |
+| DELETE | `/api/usuarios/{id}`                     | Eliminar usuario (solo si no está asignado a ninguna tarea) | Sí |
 | GET    | `/api/tareas`                            | Listar tareas                             | Sí   |
 | POST   | `/api/tareas`                            | Crear tarea                               | Sí   |
 | PUT    | `/api/tareas/{id}`                       | Editar tarea                              | Sí   |
@@ -139,10 +171,20 @@ todas las llamadas a la API (ver `frontend/src/api/config.js`).
 
 ## Ejemplos de uso (datos de prueba)
 
+Los siguientes `curl` funcionan tanto contra el backend local como contra el deploy en vivo — solo hay que cambiar la variable `BASE`:
+
+```bash
+# En local:
+BASE="http://localhost:8080/api"
+# O contra el deploy en Render (recordar: el primer pedido puede tardar
+# 30-60s si el servicio estaba dormido):
+BASE="https://java-entregafinal-valentintorres.onrender.com/api"
+```
+
 Crear un usuario (registro, no necesita token):
 
 ```bash
-curl -X POST http://localhost:8080/api/usuarios \
+curl -X POST "$BASE/usuarios" \
   -H "Content-Type: application/json" \
   -d '{"nombre": "Valentin Torres", "email": "valen@example.com", "password": "secreto123"}'
 ```
@@ -150,7 +192,7 @@ curl -X POST http://localhost:8080/api/usuarios \
 Loguearse para obtener el token (todo lo que sigue lo necesita):
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST "$BASE/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email": "valen@example.com", "password": "secreto123"}'
 ```
@@ -164,7 +206,7 @@ TOKEN="pegar-el-token-aca"
 Crear un proyecto:
 
 ```bash
-curl -X POST http://localhost:8080/api/proyectos \
+curl -X POST "$BASE/proyectos" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"nombre": "Proyecto Final Java", "descripcion": "TP de Talento Tech"}'
@@ -173,7 +215,7 @@ curl -X POST http://localhost:8080/api/proyectos \
 Crear una tarea dentro del proyecto con id 1, en la columna con id 1 (por defecto, "Pendiente"):
 
 ```bash
-curl -X POST http://localhost:8080/api/tareas \
+curl -X POST "$BASE/tareas" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"titulo": "Modelar entidades", "descripcion": "JPA + relaciones", "columna": {"id": 1}, "proyecto": {"id": 1}}'
@@ -182,7 +224,7 @@ curl -X POST http://localhost:8080/api/tareas \
 Crear una columna nueva:
 
 ```bash
-curl -X POST http://localhost:8080/api/columnas \
+curl -X POST "$BASE/columnas" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"nombre": "En revisión", "esFinal": false}'
@@ -191,7 +233,14 @@ curl -X POST http://localhost:8080/api/columnas \
 Asignar el usuario con id 1 a la tarea con id 1:
 
 ```bash
-curl -X POST http://localhost:8080/api/tareas/1/usuarios/1 \
+curl -X POST "$BASE/tareas/1/usuarios/1" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Probar una regla de negocio (asignar el mismo usuario dos veces debería dar 400):
+
+```bash
+curl -X POST "$BASE/tareas/1/usuarios/1" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -199,3 +248,4 @@ curl -X POST http://localhost:8080/api/tareas/1/usuarios/1 \
 
 - Todos los archivos del backend y del frontend tienen comentarios en español explicando qué hacen y cómo se conectan con el resto del flujo (`controller → service → repository → model` en el backend, `api → components → App` en el frontend).
 - El manejo de errores está centralizado en `GlobalExceptionHandler` (backend), y el frontend muestra esos mensajes de error directamente en cada formulario.
+- El pool de conexiones a la base (HikariCP) está achicado a propósito (`spring.datasource.hikari.maximum-pool-size=2`) por el límite de conexiones del plan gratuito de MySQL en producción — ver [Cómo fue el desarrollo](#cómo-fue-el-desarrollo).
