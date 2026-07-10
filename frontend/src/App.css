@@ -941,6 +941,57 @@
   align-self: stretch;
 }
 
+/* --- Pantalla de "el backend se esta despertando" (cold start) --- */
+
+.pantalla-espera {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--cds-gray-10);
+}
+
+.tarjeta-espera {
+  width: 100%;
+  max-width: 440px;
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.tarjeta-espera h2 {
+  margin: 20px 0 8px;
+}
+
+.tarjeta-espera .subtitulo {
+  margin: 0 auto;
+  min-height: 40px;
+}
+
+.espera-detalle {
+  font-size: 12px;
+  color: var(--cds-gray-50);
+  margin-top: 20px;
+}
+
+.espera-spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--cds-gray-20);
+  border-top-color: var(--cds-blue-60);
+  border-radius: 9999px;
+  animation: espera-girar 800ms linear infinite;
+}
+
+@keyframes espera-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .enlace {
   border: none;
   background: none;
