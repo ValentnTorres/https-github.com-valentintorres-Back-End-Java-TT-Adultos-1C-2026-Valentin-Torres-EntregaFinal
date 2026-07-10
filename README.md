@@ -28,7 +28,7 @@ Cumple los tres niveles de la consigna:
 - **Intermedio**: relación `@ManyToOne` (Tarea-Proyecto y Tarea-Columna), validaciones con Hibernate Validator, excepciones personalizadas.
 - **Avanzado**: relación `@ManyToMany` (Tarea-Usuario) con validación de negocio propia, manejo centralizado de errores con `@ControllerAdvice`, y CORS configurado para que el frontend (otro origen) pueda consumir la API.
 
-Además, como extra por fuera de la consigna, la API está protegida con **autenticación JWT** (Spring Security) y todo el proyecto está **desplegado en la nube** (no solo corriendo en local). Ver las secciones [Autenticación](#autenticación) y [Cómo fue el desarrollo](#cómo-fue-el-desarrollo).
+Además, como extra por fuera de la consigna, la API está protegida con **autenticación JWT** (Spring Security), tiene **3 roles con visibilidad distinta** (Admin / PM / Usuario) y todo el proyecto está **desplegado en la nube** (no solo corriendo en local). Ver las secciones [Autenticación y roles](#autenticación-y-roles) y [Cómo fue el desarrollo](#cómo-fue-el-desarrollo).
 
 ## Cómo fue el desarrollo
 
@@ -37,6 +37,8 @@ El punto de partida fue lo que pedía la consigna: CRUD completo de Proyecto/Usu
 A partir de ahí fui sumando cosas por mi cuenta, no pedidas por la consigna, para dejar el proyecto más redondo:
 
 **Autenticación JWT.** Le agregué login con Spring Security: cada `Usuario` pasó a ser también una cuenta (con contraseña hasheada con BCrypt), y toda la API quedó protegida detrás de un token, salvo el registro y el login. Esto implicó tocar el modelo de `Usuario`, sumar un filtro de seguridad (`JwtAuthFilter`) y adaptar el frontend para manejar sesión (login, logout, y mandar el token en cada request).
+
+**Roles y visibilidad (Admin / PM / Usuario).** Una vez que ya había login, se me ocurrió que tenía sentido que no todos vieran lo mismo: agregué un enum `Rol` y una jerarquía de 3 niveles (ver detalle en [Autenticación y roles](#autenticación-y-roles)). Lo más interesante técnicamente fue la relación autorreferencial en `Usuario` (`pmAsignado`, un `Usuario` apuntando a otro `Usuario`) y filtrar la visibilidad de `Proyecto` según el rol de quien pregunta en vez de devolver siempre todo. En el camino encontré otro bug real: el endpoint `GET /usuarios/equipo` tiraba un 500 (`LazyInitializationException`) cuando el usuario autenticado se incluía a sí mismo en la respuesta, porque ese objeto lo había cargado antes el filtro de seguridad (`JwtAuthFilter`) en una sesión de Hibernate distinta a la que serializa la respuesta. Lo arreglé sacando del JSON la colección `tareas` de `Usuario` (`@JsonIgnore`), que además de resolver el error no la necesitaba ningún endpoint (las tareas de un usuario se consultan al revés, desde `Tarea.usuariosAsignados`).
 
 **Una batería de pruebas manual.** Antes de dar el proyecto por cerrado, probé a mano todos los casos de uso que se me ocurrieron: CRUD normal, casos límite (ids inexistentes, campos vacíos, objetos anidados sin `id`), y las 4 reglas de negocio documentadas. Encontré 2 bugs reales:
   - Crear una tarea mandando `"proyecto": {}` (un objeto vacío, sin `id`) tiraba un error 500 con un mensaje técnico interno en vez de un 400 entendible.
@@ -122,7 +124,7 @@ El proyecto ya está desplegado (ver [Demo en vivo](#-demo-en-vivo) arriba) usan
 
 > **Alternativa:** Railway permite tener los 3 servicios (incluyendo MySQL como plugin nativo) en un solo dashboard, pero requiere tarjeta de crédito una vez agotado el crédito de prueba gratuito.
 
-## Autenticación
+## Autenticación y roles
 
 La API usa JWT: todos los endpoints bajo `/api/**` requieren un token
 válido en el header `Authorization: Bearer <token>`, **excepto** `POST
@@ -144,29 +146,62 @@ El frontend maneja esto solo: muestra una pantalla de login/registro
 cuando no hay sesión guardada, y agrega el header `Authorization` en
 todas las llamadas a la API (ver `frontend/src/api/config.js`).
 
+### Roles
+
+Todo `Usuario` tiene un `rol`, con 3 niveles posibles:
+
+- **ADMIN**: ve todos los usuarios y todos los proyectos del sistema.
+  Es quien designa a los `PM` (cambiándoles el rol) y arma los equipos
+  (asignando usuarios `USER` a un `PM`).
+- **PM** (Project Manager): crea proyectos. Cada proyecto que crea
+  solo lo puede ver ese `PM` y el equipo que el `ADMIN` le asignó.
+- **USER**: rol por defecto al registrarse (`POST /api/usuarios`
+  siempre fuerza `rol=USER`, sin importar qué mande el body). Ve
+  únicamente los proyectos del `PM` al que el `ADMIN` lo asignó.
+
+Dentro de un proyecto, solo se puede asignar una tarea a alguien del
+equipo dueño de ese proyecto (el `PM` que lo creó, o gente asignada a
+ese `PM`) — asignar a cualquier otro usuario del sistema tira un 400.
+
+**No hay alta pública de ADMIN.** El primer administrador se marca a
+mano, directo en la base de datos, después de registrarse como
+cualquier otro usuario:
+
+```sql
+UPDATE usuarios SET rol = 'ADMIN' WHERE email = 'tu-email@ejemplo.com';
+```
+
+De ahí en adelante, ese `ADMIN` ya puede designar PMs y armar equipos
+desde la propia interfaz (pestaña **Usuarios**, solo visible para
+rol `ADMIN`) o pegándole directo a los endpoints (ver la tabla de
+[Endpoints principales](#endpoints-principales)).
+
 ## Endpoints principales
 
 | Método | Endpoint                                | Descripción                              | Auth |
 |--------|------------------------------------------|-------------------------------------------|------|
-| POST   | `/api/auth/login`                        | Login (devuelve el JWT)                   | No   |
-| GET    | `/api/proyectos`                         | Listar proyectos                          | Sí   |
-| POST   | `/api/proyectos`                         | Crear proyecto                            | Sí   |
-| PUT    | `/api/proyectos/{id}`                    | Editar proyecto                           | Sí   |
-| DELETE | `/api/proyectos/{id}`                    | Eliminar proyecto (borra en cascada sus tareas) | Sí |
+| POST   | `/api/auth/login`                        | Login (devuelve el JWT, incluye `rol`)    | No   |
+| GET    | `/api/proyectos`                         | Listar proyectos visibles según el rol (ADMIN: todos, PM: los propios, USER: los de su PM) | Sí |
+| POST   | `/api/proyectos`                         | Crear proyecto                            | PM o ADMIN |
+| PUT    | `/api/proyectos/{id}`                    | Editar proyecto (solo el PM dueño, o ADMIN) | Sí |
+| DELETE | `/api/proyectos/{id}`                    | Eliminar proyecto (solo el PM dueño, o ADMIN; borra en cascada sus tareas) | Sí |
 | GET    | `/api/columnas`                          | Listar columnas del tablero (ordenadas)   | Sí   |
 | POST   | `/api/columnas`                          | Crear columna                             | Sí   |
 | PUT    | `/api/columnas/{id}`                     | Renombrar columna / marcarla como final   | Sí   |
 | DELETE | `/api/columnas/{id}`                     | Eliminar columna (solo si no tiene tareas)| Sí   |
 | PUT    | `/api/columnas/reordenar`                | Reordenar todas las columnas del tablero  | Sí   |
-| GET    | `/api/usuarios`                          | Listar usuarios                           | Sí   |
-| POST   | `/api/usuarios`                          | Crear usuario (registro de cuenta)        | No   |
+| GET    | `/api/usuarios`                          | Listar **todos** los usuarios del sistema | Solo ADMIN |
+| GET    | `/api/usuarios/equipo`                   | Listar el equipo visible para quien pregunta (ADMIN: todos, PM: su equipo, USER: sus compañeros + su PM) | Sí |
+| POST   | `/api/usuarios`                          | Crear usuario (registro de cuenta, siempre queda con `rol=USER`) | No |
 | PUT    | `/api/usuarios/{id}`                     | Editar usuario                            | Sí   |
+| PUT    | `/api/usuarios/{id}/rol`                 | Cambiar el rol de un usuario (`{"rol": "PM"}`) | Solo ADMIN |
+| PUT    | `/api/usuarios/{id}/pm`                  | Asignar un usuario a un PM (`{"pmId": 5}`) | Solo ADMIN |
 | DELETE | `/api/usuarios/{id}`                     | Eliminar usuario (solo si no está asignado a ninguna tarea) | Sí |
 | GET    | `/api/tareas`                            | Listar tareas                             | Sí   |
 | POST   | `/api/tareas`                            | Crear tarea                               | Sí   |
 | PUT    | `/api/tareas/{id}`                       | Editar tarea                              | Sí   |
 | DELETE | `/api/tareas/{id}`                       | Eliminar tarea                            | Sí   |
-| POST   | `/api/tareas/{tareaId}/usuarios/{usuarioId}` | Asignar un usuario a una tarea       | Sí   |
+| POST   | `/api/tareas/{tareaId}/usuarios/{usuarioId}` | Asignar un usuario a una tarea (tiene que ser del equipo dueño del proyecto) | Sí |
 | DELETE | `/api/tareas/{tareaId}/usuarios/{usuarioId}` | Quitar un usuario de una tarea       | Sí   |
 
 ## Probar la API con Postman

@@ -6,6 +6,8 @@ import {
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
+  cambiarRolUsuario,
+  asignarUsuarioAPm,
 } from "../api/usuariosApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
@@ -16,6 +18,7 @@ const FORM_VACIO = { nombre: "", email: "", password: "" };
 // mostrar varias y despues encontrarse con menos usuarios reales hace
 // que la lista se encoja de golpe al terminar de cargar.
 const FILAS_ESQUELETO = 1;
+const ROLES = ["USER", "PM", "ADMIN"];
 
 function UsuariosPage() {
   const [usuarios, setUsuarios] = useState([]);
@@ -85,6 +88,28 @@ function UsuariosPage() {
       setError(err.message);
     }
   }
+
+  async function manejarCambioRol(usuario, nuevoRol) {
+    setError("");
+    try {
+      await cambiarRolUsuario(usuario.id, nuevoRol);
+      await cargarUsuarios();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function manejarAsignarPm(usuario, pmId) {
+    setError("");
+    try {
+      await asignarUsuarioAPm(usuario.id, pmId);
+      await cargarUsuarios();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  const pms = usuarios.filter((usuario) => usuario.rol === "PM");
 
   return (
     <section>
@@ -177,7 +202,32 @@ function UsuariosPage() {
                   <p className="dato-mono">{usuario.email}</p>
                 </div>
               </div>
-              <div className="acciones">
+              <div className="acciones acciones-rol">
+                <select
+                  value={usuario.rol}
+                  onChange={(evento) => manejarCambioRol(usuario, evento.target.value)}
+                  title="Cambiar rol"
+                >
+                  {ROLES.map((rol) => (
+                    <option key={rol} value={rol}>
+                      {rol}
+                    </option>
+                  ))}
+                </select>
+                {usuario.rol === "USER" && (
+                  <select
+                    value={usuario.pmAsignado?.id ?? ""}
+                    onChange={(evento) => manejarAsignarPm(usuario, evento.target.value)}
+                    title="Asignar a un PM"
+                  >
+                    <option value="">Sin PM asignado</option>
+                    {pms.map((pm) => (
+                      <option key={pm.id} value={pm.id}>
+                        {pm.nombre}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <button onClick={() => empezarEdicion(usuario)}>Editar</button>
                 <button onClick={() => manejarEliminar(usuario)}>Eliminar</button>
               </div>

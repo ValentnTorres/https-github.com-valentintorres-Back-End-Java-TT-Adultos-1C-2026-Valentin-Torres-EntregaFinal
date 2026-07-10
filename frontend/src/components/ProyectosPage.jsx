@@ -19,7 +19,7 @@ const FORM_VACIO = { nombre: "", descripcion: "" };
 // que se ve peor que el salto (minimo) de ir de 1 fila esqueleto a 1 fila real.
 const FILAS_ESQUELETO = 1;
 
-function ProyectosPage({ onVerTareas }) {
+function ProyectosPage({ onVerTareas, usuario }) {
   const [proyectos, setProyectos] = useState([]);
   const [form, setForm] = useState(FORM_VACIO);
   const [idEnEdicion, setIdEnEdicion] = useState(null);
@@ -95,6 +95,17 @@ function ProyectosPage({ onVerTareas }) {
     }
   }
 
+  // Un USER solo ve los proyectos que le tocaron (los de su PM
+  // asignado): no crea ni edita/borra proyectos, eso es cosa de
+  // PM/ADMIN. Ocultamos el form entero en vez de mostrarlo y dejar que
+  // el backend responda 403, para no confundir a alguien que ni
+  // siquiera deberia ver la opcion.
+  const puedeCrear = usuario.rol !== "USER";
+
+  function puedeEditar(proyecto) {
+    return usuario.rol === "ADMIN" || proyecto.creadoPor?.id === usuario.id;
+  }
+
   return (
     <section>
       <div className="encabezado-seccion">
@@ -105,37 +116,39 @@ function ProyectosPage({ onVerTareas }) {
         </p>
       </div>
 
-      <form className="formulario" onSubmit={manejarSubmit}>
-        <div className="campo">
-          <label htmlFor="nombre-proyecto">Nombre del proyecto</label>
-          <input
-            id="nombre-proyecto"
-            name="nombre"
-            placeholder="Ej: Proyecto Final Java"
-            value={form.nombre}
-            onChange={manejarCambio}
-            required
-          />
-        </div>
-        <div className="campo campo-ancho">
-          <label htmlFor="descripcion-proyecto">Descripción (opcional)</label>
-          <input
-            id="descripcion-proyecto"
-            name="descripcion"
-            placeholder="¿De qué se trata este proyecto?"
-            value={form.descripcion}
-            onChange={manejarCambio}
-          />
-        </div>
-        <div className="campo campo-boton">
-          <button type="submit">{idEnEdicion ? "Guardar cambios" : "Crear proyecto"}</button>
-          {idEnEdicion && (
-            <button type="button" onClick={cancelarEdicion}>
-              Cancelar
-            </button>
-          )}
-        </div>
-      </form>
+      {puedeCrear && (
+        <form className="formulario" onSubmit={manejarSubmit}>
+          <div className="campo">
+            <label htmlFor="nombre-proyecto">Nombre del proyecto</label>
+            <input
+              id="nombre-proyecto"
+              name="nombre"
+              placeholder="Ej: Proyecto Final Java"
+              value={form.nombre}
+              onChange={manejarCambio}
+              required
+            />
+          </div>
+          <div className="campo campo-ancho">
+            <label htmlFor="descripcion-proyecto">Descripción (opcional)</label>
+            <input
+              id="descripcion-proyecto"
+              name="descripcion"
+              placeholder="¿De qué se trata este proyecto?"
+              value={form.descripcion}
+              onChange={manejarCambio}
+            />
+          </div>
+          <div className="campo campo-boton">
+            <button type="submit">{idEnEdicion ? "Guardar cambios" : "Crear proyecto"}</button>
+            {idEnEdicion && (
+              <button type="button" onClick={cancelarEdicion}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </form>
+      )}
 
       <Mensaje texto={error} />
 
@@ -166,10 +179,12 @@ function ProyectosPage({ onVerTareas }) {
                 <strong>{proyecto.nombre}</strong>
                 {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
               </button>
-              <div className="acciones">
-                <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
-                <button onClick={() => manejarEliminar(proyecto)}>Eliminar</button>
-              </div>
+              {puedeEditar(proyecto) && (
+                <div className="acciones">
+                  <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
+                  <button onClick={() => manejarEliminar(proyecto)}>Eliminar</button>
+                </div>
+              )}
             </li>
           ))}
         {!cargando && proyectos.length === 0 && <p className="fade-in-suave">Todavia no hay proyectos cargados.</p>}

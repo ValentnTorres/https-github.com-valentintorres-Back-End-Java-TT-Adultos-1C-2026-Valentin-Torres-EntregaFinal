@@ -34,7 +34,7 @@ import {
   reordenarColumnas,
 } from "../api/columnasApi";
 import { listarProyectos } from "../api/proyectosApi";
-import { listarUsuarios } from "../api/usuariosApi";
+import { obtenerEquipo } from "../api/usuariosApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
 import TareaCard from "./TareaCard";
@@ -96,7 +96,7 @@ function TareasPage({ proyectoAbiertoId, onVolver }) {
         listarTareas(),
         listarColumnas(),
         listarProyectos(),
-        listarUsuarios(),
+        obtenerEquipo(),
       ]);
       setTareas(tareasData);
       setColumnas(columnasData);

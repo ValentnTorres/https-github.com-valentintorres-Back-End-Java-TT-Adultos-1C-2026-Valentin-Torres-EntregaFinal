@@ -44,11 +44,49 @@
           }
         },
         {
-          "name": "Listar usuarios",
+          "name": "Listar usuarios (solo ADMIN)",
           "request": {
             "method": "GET",
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
-            "url": { "raw": "{{base_url}}/usuarios", "host": ["{{base_url}}"], "path": ["usuarios"] }
+            "url": { "raw": "{{base_url}}/usuarios", "host": ["{{base_url}}"], "path": ["usuarios"] },
+            "description": "Devuelve 403 si quien pregunta no tiene rol ADMIN."
+          }
+        },
+        {
+          "name": "Listar mi equipo",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "url": { "raw": "{{base_url}}/usuarios/equipo", "host": ["{{base_url}}"], "path": ["usuarios", "equipo"] },
+            "description": "Cualquier rol autenticado. Devuelve todos si sos ADMIN, tu equipo si sos PM, o tus compañeros + tu PM si sos USER."
+          }
+        },
+        {
+          "name": "Cambiar rol de un usuario (solo ADMIN)",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"PM\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/usuarios/1/rol", "host": ["{{base_url}}"], "path": ["usuarios", "1", "rol"] },
+            "description": "rol puede ser ADMIN, PM o USER. Devuelve 403 si quien lo llama no es ADMIN."
+          }
+        },
+        {
+          "name": "Asignar usuario a un PM (solo ADMIN)",
+          "request": {
+            "method": "PUT",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pmId\": 2\n}"
+            },
+            "url": { "raw": "{{base_url}}/usuarios/1/pm", "host": ["{{base_url}}"], "path": ["usuarios", "1", "pm"] },
+            "description": "pmId tiene que ser el id de un usuario con rol PM, si no da 400. Devuelve 403 si quien lo llama no es ADMIN."
           }
         },
         {

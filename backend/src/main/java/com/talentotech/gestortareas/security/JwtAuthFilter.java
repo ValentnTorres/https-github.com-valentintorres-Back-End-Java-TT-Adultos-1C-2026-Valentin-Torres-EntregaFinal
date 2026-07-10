@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -54,7 +55,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private void autenticar(Usuario usuario) {
-        var authentication = new UsernamePasswordAuthenticationToken(usuario, null, List.of());
+        // El prefijo "ROLE_" es una convencion de Spring Security: hasRole("ADMIN")
+        // internamente busca una authority llamada "ROLE_ADMIN".
+        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol()));
+        var authentication = new UsernamePasswordAuthenticationToken(usuario, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

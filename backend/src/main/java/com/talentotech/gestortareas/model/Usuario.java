@@ -1,5 +1,6 @@
 package com.talentotech.gestortareas.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -55,11 +56,33 @@ public class Usuario {
     private String password;
 
     // Lado inverso de la relacion ManyToMany, no genera columnas nuevas.
-    // Ignoramos "tareas" al serializar para no arrastrar toda la cadena de
-    // relaciones cada vez que devolvemos un Usuario por la API.
+    // @JsonIgnore: ademas de evitar arrastrar toda la cadena de relaciones,
+    // es LAZY (default de @ManyToMany) y en GET /usuarios/equipo el
+    // usuario autenticado (@AuthenticationPrincipal, cargado en
+    // JwtAuthFilter) puede terminar en la respuesta ya "desprendido" de la
+    // sesion de Hibernate que lo cargo - serializar esta coleccion en ese
+    // caso tira LazyInitializationException. Ningun endpoint necesita las
+    // tareas de un usuario colgando del usuario mismo (se consultan al
+    // reves, desde Tarea.usuariosAsignados), asi que directamente no se
+    // serializa nunca.
     @ManyToMany(mappedBy = "usuariosAsignados")
-    @JsonIgnoreProperties({"usuariosAsignados", "proyecto"})
+    @JsonIgnore
     private Set<Tarea> tareas = new HashSet<>();
+
+    // USER por defecto: UsuarioService.crear() lo fuerza siempre en el
+    // alta publica, sin importar que mande el body (para que nadie se
+    // autoasigne ADMIN/PM registrandose).
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Rol rol = Rol.USER;
+
+    // Autorreferencial: a que PM pertenece este usuario (solo tiene
+    // sentido cuando rol=USER). Lo asigna el ADMIN. JsonIgnoreProperties
+    // corta la cadena para no arrastrar el pmAsignado del pmAsignado...
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "pm_asignado_id")
+    @JsonIgnoreProperties({"tareas", "pmAsignado"})
+    private Usuario pmAsignado;
 
     public Usuario() {
     }
@@ -107,5 +130,21 @@ public class Usuario {
 
     public void setTareas(Set<Tarea> tareas) {
         this.tareas = tareas;
+    }
+
+    public Rol getRol() {
+        return rol;
+    }
+
+    public void setRol(Rol rol) {
+        this.rol = rol;
+    }
+
+    public Usuario getPmAsignado() {
+        return pmAsignado;
+    }
+
+    public void setPmAsignado(Usuario pmAsignado) {
+        this.pmAsignado = pmAsignado;
     }
 }

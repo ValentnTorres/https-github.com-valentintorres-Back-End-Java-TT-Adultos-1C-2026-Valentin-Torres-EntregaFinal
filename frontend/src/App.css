@@ -383,6 +383,23 @@
   align-items: flex-start;
 }
 
+/* Fila de Usuarios (solo ADMIN la ve): ademas de Editar/Eliminar, trae
+   selects para cambiar rol y asignar PM. flex-wrap porque son varios
+   controles mas angostos que un boton, no vale la pena forzarlos en
+   una sola linea en pantallas chicas. */
+.acciones-rol {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.acciones-rol select {
+  border: 1px solid var(--cds-gray-50);
+  background: var(--cds-white);
+  color: var(--cds-gray-100);
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
 @media (max-width: 640px) {
   .lista > li {
     flex-direction: column;

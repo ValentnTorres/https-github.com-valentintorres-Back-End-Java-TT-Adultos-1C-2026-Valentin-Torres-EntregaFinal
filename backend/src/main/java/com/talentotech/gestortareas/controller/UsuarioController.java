@@ -1,10 +1,13 @@
 package com.talentotech.gestortareas.controller;
 
+import com.talentotech.gestortareas.dto.AsignarPmRequest;
+import com.talentotech.gestortareas.dto.CambiarRolRequest;
 import com.talentotech.gestortareas.model.Usuario;
 import com.talentotech.gestortareas.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +34,14 @@ public class UsuarioController {
         return usuarioService.listarTodos();
     }
 
+    // Cualquier rol autenticado puede pedir esto (lo usa el selector de
+    // "asignar a una tarea" en el frontend); el filtrado por rol lo hace
+    // el service, no una restriccion de SecurityConfig.
+    @GetMapping("/equipo")
+    public List<Usuario> equipo(@AuthenticationPrincipal Usuario actual) {
+        return usuarioService.listarEquipoDe(actual);
+    }
+
     @GetMapping("/{id}")
     public Usuario buscarPorId(@PathVariable Long id) {
         return usuarioService.buscarPorId(id);
@@ -45,6 +56,18 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public Usuario actualizar(@PathVariable Long id, @Valid @RequestBody Usuario usuario) {
         return usuarioService.actualizar(id, usuario);
+    }
+
+    // Restringido a ADMIN en SecurityConfig.
+    @PutMapping("/{id}/rol")
+    public Usuario cambiarRol(@PathVariable Long id, @Valid @RequestBody CambiarRolRequest request) {
+        return usuarioService.cambiarRol(id, request.rol());
+    }
+
+    // Restringido a ADMIN en SecurityConfig.
+    @PutMapping("/{id}/pm")
+    public Usuario asignarAPm(@PathVariable Long id, @Valid @RequestBody AsignarPmRequest request) {
+        return usuarioService.asignarAPm(id, request.pmId());
     }
 
     @DeleteMapping("/{id}")

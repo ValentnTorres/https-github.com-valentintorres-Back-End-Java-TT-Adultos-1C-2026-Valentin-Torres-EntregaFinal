@@ -41,6 +41,14 @@ public class Proyecto {
     @JsonIgnoreProperties({"proyecto", "usuariosAsignados"})
     private Set<Tarea> tareas = new HashSet<>();
 
+    // Que PM es dueño de este proyecto: define quien lo puede ver
+    // (el PM y su equipo, ver ProyectoService.listarVisiblesPara) y
+    // quien lo puede editar/borrar.
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "creado_por_id", nullable = false)
+    @JsonIgnoreProperties({"tareas", "pmAsignado"})
+    private Usuario creadoPor;
+
     public Proyecto() {
     }
 
@@ -79,5 +87,13 @@ public class Proyecto {
 
     public void setTareas(Set<Tarea> tareas) {
         this.tareas = tareas;
+    }
+
+    public Usuario getCreadoPor() {
+        return creadoPor;
+    }
+
+    public void setCreadoPor(Usuario creadoPor) {
+        this.creadoPor = creadoPor;
     }
 }

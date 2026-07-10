@@ -2,6 +2,7 @@ package com.talentotech.gestortareas.service;
 
 import com.talentotech.gestortareas.exception.BusinessRuleException;
 import com.talentotech.gestortareas.exception.ResourceNotFoundException;
+import com.talentotech.gestortareas.model.Rol;
 import com.talentotech.gestortareas.model.Usuario;
 import com.talentotech.gestortareas.repository.TareaRepository;
 import com.talentotech.gestortareas.repository.UsuarioRepository;
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Service de Usuario.
@@ -55,6 +57,11 @@ public class UsuarioService {
             throw new BusinessRuleException("La contraseña debe tener al menos 6 caracteres");
         }
         usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
+        // El alta es publica (POST /api/usuarios sin auth, ver SecurityConfig):
+        // forzamos rol USER y sin PM asignado sin importar que mande el body,
+        // para que nadie se autoasigne ADMIN/PM registrandose.
+        usuario.setRol(Rol.USER);
+        usuario.setPmAsignado(null);
         return usuarioRepository.save(usuario);
     }
 
@@ -75,5 +82,59 @@ public class UsuarioService {
             throw new BusinessRuleException("No se puede eliminar un usuario que todavia esta asignado a alguna tarea");
         }
         usuarioRepository.delete(usuario);
+    }
+
+    // Solo la llama el controller bajo PUT /usuarios/{id}/rol, restringido
+    // a ADMIN en SecurityConfig. Si un PM deja de serlo, sus proyectos
+    // existentes no se tocan (quedan "huerfanos" de un PM que ya no es
+    // PM - caso aceptado, no hace falta reasignarlos).
+    public Usuario cambiarRol(Long usuarioId, Rol nuevoRol) {
+        Usuario usuario = buscarPorId(usuarioId);
+        usuario.setRol(nuevoRol);
+        return usuarioRepository.save(usuario);
+    }
+
+    // Solo la llama el controller bajo PUT /usuarios/{id}/pm, restringido
+    // a ADMIN. Asigna a un USER el PM cuyo equipo va a integrar.
+    public Usuario asignarAPm(Long usuarioId, Long pmId) {
+        Usuario usuario = buscarPorId(usuarioId);
+        Usuario pm = buscarPorId(pmId);
+        if (pm.getRol() != Rol.PM) {
+            throw new BusinessRuleException("El usuario indicado como PM no tiene rol PM");
+        }
+        usuario.setPmAsignado(pm);
+        return usuarioRepository.save(usuario);
+    }
+
+    /**
+     * Lista de usuarios "visibles" para armar el selector de asignacion de
+     * tareas, segun el rol del que pregunta:
+     *  - ADMIN: todos.
+     *  - PM: su equipo (los usuarios que le asigno el ADMIN) mas el mismo.
+     *  - USER: sus compañeros de equipo (mismo PM asignado) mas ese PM.
+     */
+    public List<Usuario> listarEquipoDe(Usuario actual) {
+        if (actual.getRol() == Rol.ADMIN) {
+            return usuarioRepository.findAll();
+        }
+
+        if (actual.getRol() == Rol.PM) {
+            List<Usuario> equipo = usuarioRepository.findAll().stream()
+                    .filter(u -> u.getPmAsignado() != null && u.getPmAsignado().getId().equals(actual.getId()))
+                    .collect(Collectors.toList());
+            equipo.add(actual);
+            return equipo;
+        }
+
+        // USER sin PM asignado todavia: no tiene equipo.
+        if (actual.getPmAsignado() == null) {
+            return List.of();
+        }
+        Long pmId = actual.getPmAsignado().getId();
+        List<Usuario> equipo = usuarioRepository.findAll().stream()
+                .filter(u -> u.getPmAsignado() != null && u.getPmAsignado().getId().equals(pmId))
+                .collect(Collectors.toList());
+        equipo.add(actual.getPmAsignado());
+        return equipo;
     }
 }

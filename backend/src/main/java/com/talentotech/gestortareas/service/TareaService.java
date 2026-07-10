@@ -110,6 +110,17 @@ public class TareaService {
             );
         }
 
+        // El usuario a asignar tiene que ser parte del equipo dueño del
+        // proyecto (el PM que lo creo, o alguien asignado a ese PM) -
+        // mismo criterio que UsuarioService.listarEquipoDe, pero puntual
+        // a este proyecto en vez de al equipo completo del que pregunta.
+        Usuario pmDelProyecto = tarea.getProyecto().getCreadoPor();
+        boolean esDelEquipo = usuario.getId().equals(pmDelProyecto.getId())
+                || (usuario.getPmAsignado() != null && usuario.getPmAsignado().getId().equals(pmDelProyecto.getId()));
+        if (!esDelEquipo) {
+            throw new BusinessRuleException("El usuario no pertenece al equipo de este proyecto");
+        }
+
         // Comparamos por id (no por el equals/hashCode default, que
         // compara por referencia) para saber si el usuario ya estaba
         // asignado.

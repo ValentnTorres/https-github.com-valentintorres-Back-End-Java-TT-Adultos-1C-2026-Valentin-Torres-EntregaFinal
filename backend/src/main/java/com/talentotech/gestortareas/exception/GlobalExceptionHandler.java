@@ -43,6 +43,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    // Se dispara cuando un usuario autenticado intenta una accion que su
+    // rol no le permite (por ejemplo, un PM editando el proyecto de otro PM).
+    @ExceptionHandler(AccesoDenegadoException.class)
+    public ResponseEntity<ErrorResponse> manejarAccesoDenegado(AccesoDenegadoException ex) {
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "Acceso denegado",
+                List.of(ex.getMessage())
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
     // Se dispara cuando el login recibe un email/password que no
     // coinciden con ningun usuario.
     @ExceptionHandler(CredencialesInvalidasException.class)

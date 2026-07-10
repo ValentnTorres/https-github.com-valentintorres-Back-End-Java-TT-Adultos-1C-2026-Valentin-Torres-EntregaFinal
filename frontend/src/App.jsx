@@ -16,10 +16,16 @@ import "./App.css";
 // Ya no hay una pestaña "Tareas" en el menu: cada proyecto es su propio
 // tablero aislado (como los boards de Trello), y la unica forma de
 // entrar a uno es clickeandolo desde Proyectos (ver "proyectoAbiertoId").
+// "Usuarios" lista a TODA la gente del sistema, asi que solo tiene
+// sentido para un ADMIN (ver filtro en pestanasVisiblesPara).
 const PESTANAS = [
   { id: "proyectos", etiqueta: "Proyectos" },
-  { id: "usuarios", etiqueta: "Usuarios" },
+  { id: "usuarios", etiqueta: "Usuarios", soloAdmin: true },
 ];
+
+function pestanasVisiblesPara(usuario) {
+  return PESTANAS.filter((pestana) => !pestana.soloAdmin || usuario?.rol === "ADMIN");
+}
 
 function App() {
   const [pestanaActiva, setPestanaActiva] = useState("proyectos");
@@ -97,7 +103,7 @@ function App() {
           <span className="carbon-header-titulo">Gestor de Tareas y Proyectos</span>
         </div>
         <nav className="tabs">
-          {PESTANAS.map((pestana) => (
+          {pestanasVisiblesPara(usuario).map((pestana) => (
             <button
               key={pestana.id}
               className={!proyectoAbiertoId && pestana.id === pestanaActiva ? "tab tab-activo" : "tab"}
@@ -128,11 +134,13 @@ function App() {
             visitado. Asi, cada pagina pide sus datos una sola vez al
             arrancar la app, y navegar es instantaneo. */}
         <div hidden={!!proyectoAbiertoId || pestanaActiva !== "proyectos"}>
-          <ProyectosPage onVerTareas={abrirProyecto} />
+          <ProyectosPage onVerTareas={abrirProyecto} usuario={usuario} />
         </div>
-        <div hidden={!!proyectoAbiertoId || pestanaActiva !== "usuarios"}>
-          <UsuariosPage />
-        </div>
+        {usuario.rol === "ADMIN" && (
+          <div hidden={!!proyectoAbiertoId || pestanaActiva !== "usuarios"}>
+            <UsuariosPage />
+          </div>
+        )}
         <div hidden={!proyectoAbiertoId}>
           <TareasPage proyectoAbiertoId={proyectoAbiertoId} onVolver={volverAProyectos} />
         </div>

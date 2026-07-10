@@ -1,10 +1,12 @@
 package com.talentotech.gestortareas.controller;
 
 import com.talentotech.gestortareas.model.Proyecto;
+import com.talentotech.gestortareas.model.Usuario;
 import com.talentotech.gestortareas.service.ProyectoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,8 +27,8 @@ public class ProyectoController {
     }
 
     @GetMapping
-    public List<Proyecto> listar() {
-        return proyectoService.listarTodos();
+    public List<Proyecto> listar(@AuthenticationPrincipal Usuario actual) {
+        return proyectoService.listarVisiblesPara(actual);
     }
 
     @GetMapping("/{id}")
@@ -34,20 +36,21 @@ public class ProyectoController {
         return proyectoService.buscarPorId(id);
     }
 
+    // Restringido a PM/ADMIN en SecurityConfig.
     @PostMapping
-    public ResponseEntity<Proyecto> crear(@Valid @RequestBody Proyecto proyecto) {
-        Proyecto creado = proyectoService.crear(proyecto);
+    public ResponseEntity<Proyecto> crear(@Valid @RequestBody Proyecto proyecto, @AuthenticationPrincipal Usuario actual) {
+        Proyecto creado = proyectoService.crear(proyecto, actual);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
-    public Proyecto actualizar(@PathVariable Long id, @Valid @RequestBody Proyecto proyecto) {
-        return proyectoService.actualizar(id, proyecto);
+    public Proyecto actualizar(@PathVariable Long id, @Valid @RequestBody Proyecto proyecto, @AuthenticationPrincipal Usuario actual) {
+        return proyectoService.actualizar(id, proyecto, actual);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        proyectoService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, @AuthenticationPrincipal Usuario actual) {
+        proyectoService.eliminar(id, actual);
         return ResponseEntity.noContent().build();
     }
 }

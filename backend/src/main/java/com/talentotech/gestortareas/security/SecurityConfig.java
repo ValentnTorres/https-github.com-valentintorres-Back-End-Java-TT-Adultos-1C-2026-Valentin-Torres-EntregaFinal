@@ -26,15 +26,18 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final CorsConfigurationSource corsConfigurationSource;
 
     public SecurityConfig(
             JwtAuthFilter jwtAuthFilter,
             JwtAuthEntryPoint jwtAuthEntryPoint,
+            JwtAccessDeniedHandler jwtAccessDeniedHandler,
             CorsConfigurationSource corsConfigurationSource
     ) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
+        this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
         this.corsConfigurationSource = corsConfigurationSource;
     }
 
@@ -49,11 +52,23 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(jwtAuthEntryPoint))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(jwtAuthEntryPoint)
+                        .accessDeniedHandler(jwtAccessDeniedHandler)
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
+                        // Solo ADMIN ve la lista completa de usuarios del sistema.
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/usuarios/*/rol").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/usuarios/*/pm").hasRole("ADMIN")
+                        // Crear proyectos es cosa de PM (o ADMIN); el resto de las
+                        // rutas de proyectos quedan solo "authenticated" porque el
+                        // filtrado por rol (que ve, que puede editar/borrar) lo hace
+                        // ProyectoService caso a caso.
+                        .requestMatchers(HttpMethod.POST, "/api/proyectos").hasAnyRole("PM", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
