@@ -10,6 +10,6 @@ import java.util.List;
  */
 public interface ColumnaRepository extends JpaRepository<Columna, Long> {
 
-    // Trae las columnas en el orden en que se muestran en el tablero.
+    // Trae las columnas ya ordenadas tal cual se ven en el tablero.
     List<Columna> findAllByOrderByOrdenAsc();
 }

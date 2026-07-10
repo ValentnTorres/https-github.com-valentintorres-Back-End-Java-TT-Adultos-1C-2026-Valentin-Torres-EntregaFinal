@@ -1,7 +1,3 @@
-# Config local de Claude Code (rutas y permisos de esta maquina, no
-# tiene sentido compartirlo en el repo).
-.claude/
-
 # Basura de sistema operativo
 .DS_Store
 Thumbs.db

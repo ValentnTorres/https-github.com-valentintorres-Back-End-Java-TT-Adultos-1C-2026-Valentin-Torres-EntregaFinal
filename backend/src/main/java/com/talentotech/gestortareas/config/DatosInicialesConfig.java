@@ -8,9 +8,10 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Crea las 3 columnas por defecto (Pendiente / En progreso / Completada)
- * la primera vez que arranca la app contra una base vacia, para que el
- * tablero no arranque sin ninguna columna. Si ya hay columnas cargadas
- * (por ejemplo, porque el usuario ya creo/borro las suyas), no hace nada.
+ * la primera vez que la app arranca contra una base vacia, para que el
+ * tablero no te arranque sin ninguna columna. Si ya hay columnas
+ * cargadas (por ejemplo porque ya creaste/borraste las tuyas), no hace
+ * nada.
  */
 @Configuration
 public class DatosInicialesConfig {

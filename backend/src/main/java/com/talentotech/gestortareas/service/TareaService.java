@@ -15,8 +15,8 @@ import java.util.List;
  * Service de Tarea.
  *
  * Es el service mas importante del proyecto: ademas del CRUD, maneja
- * la relacion ManyToMany con Usuario (asignar/desasignar) y aplica
- * las validaciones de negocio pedidas por la consigna del nivel avanzado.
+ * la relacion ManyToMany con Usuario (asignar/desasignar) y aplica las
+ * validaciones de negocio que pide la consigna del nivel avanzado.
  */
 @Service
 public class TareaService {
@@ -48,6 +48,17 @@ public class TareaService {
     }
 
     public Tarea crear(Tarea tarea) {
+        // El @NotNull de la entidad exige que "proyecto"/"columna" no
+        // sean null, pero no te impide mandar un objeto vacio ({}) sin
+        // id. Sin este chequeo, buscarPorId(null) explota como error
+        // interno en vez de tirarte un 400 con un mensaje claro.
+        if (tarea.getProyecto() == null || tarea.getProyecto().getId() == null) {
+            throw new BusinessRuleException("Hay que indicar el id del proyecto");
+        }
+        if (tarea.getColumna() == null || tarea.getColumna().getId() == null) {
+            throw new BusinessRuleException("Hay que indicar el id de la columna");
+        }
+
         // Verificamos que el proyecto y la columna indicados existan
         // antes de guardar la tarea.
         Proyecto proyecto = proyectoService.buscarPorId(tarea.getProyecto().getId());
@@ -99,8 +110,9 @@ public class TareaService {
             );
         }
 
-        // Comparamos por id (no por equals/hashCode default, que compara
-        // por referencia) para saber si el usuario ya estaba asignado.
+        // Comparamos por id (no por el equals/hashCode default, que
+        // compara por referencia) para saber si el usuario ya estaba
+        // asignado.
         boolean yaAsignado = tarea.getUsuariosAsignados().stream()
                 .anyMatch(u -> u.getId().equals(usuarioId));
         if (yaAsignado) {

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Controller REST de Tarea.
  *
- * Ademas del CRUD sobre /api/tareas, expone dos endpoints extra para
+ * Ademas del CRUD sobre /api/tareas, expone dos endpoints mas para
  * manejar la relacion ManyToMany con Usuario: asignar y desasignar.
  */
 @RestController
@@ -53,13 +53,13 @@ public class TareaController {
     }
 
     // Asigna un usuario existente a una tarea existente (crea la fila
-    // en la tabla intermedia tarea_usuario).
+    // nueva en la tabla intermedia tarea_usuario).
     @PostMapping("/{tareaId}/usuarios/{usuarioId}")
     public Tarea asignarUsuario(@PathVariable Long tareaId, @PathVariable Long usuarioId) {
         return tareaService.asignarUsuario(tareaId, usuarioId);
     }
 
-    // Desasigna un usuario de una tarea (borra la fila de la tabla intermedia).
+    // Desasigna un usuario de una tarea (le borra la fila de la tabla intermedia).
     @DeleteMapping("/{tareaId}/usuarios/{usuarioId}")
     public Tarea desasignarUsuario(@PathVariable Long tareaId, @PathVariable Long usuarioId) {
         return tareaService.desasignarUsuario(tareaId, usuarioId);

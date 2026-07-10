@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * Manejador centralizado de excepciones.
  *
- * @RestControllerAdvice hace que estos metodos apliquen a TODOS los
- * controllers de la app, asi no repetimos try/catch en cada endpoint.
- * Cada metodo intercepta un tipo de excepcion puntual y arma una
+ * @RestControllerAdvice hace que estos metodos le apliquen a TODOS los
+ * controllers de la app, asi no repetis try/catch en cada endpoint.
+ * Cada metodo agarra un tipo de excepcion puntual y arma una
  * respuesta HTTP prolija y consistente (ver ErrorResponse).
  */
 @RestControllerAdvice
@@ -43,9 +43,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    // Se dispara automaticamente cuando fallan las validaciones de
-    // Hibernate Validator (@NotBlank, @Email, @Size, etc) sobre el
-    // body de una request (@Valid en el controller).
+    // Se dispara cuando el login recibe un email/password que no
+    // coinciden con ningun usuario.
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<ErrorResponse> manejarCredencialesInvalidas(CredencialesInvalidasException ex) {
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Credenciales invalidas",
+                List.of(ex.getMessage())
+        );
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    // Se dispara solo cuando fallan las validaciones de Hibernate
+    // Validator (@NotBlank, @Email, @Size, etc) sobre el body de una
+    // request (@Valid en el controller).
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> manejarValidacion(MethodArgumentNotValidException ex) {
         List<String> mensajes = ex.getBindingResult().getFieldErrors().stream()

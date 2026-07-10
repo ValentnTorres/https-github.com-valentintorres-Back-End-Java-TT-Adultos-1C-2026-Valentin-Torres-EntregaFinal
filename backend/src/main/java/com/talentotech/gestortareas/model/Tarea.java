@@ -16,12 +16,12 @@ import java.util.Set;
  * Es el centro de las tres relaciones ManyToOne/ManyToMany del dominio:
  *  - ManyToOne con Proyecto: cada tarea pertenece a un unico proyecto.
  *  - ManyToOne con Columna: en que columna del tablero Kanban esta
- *    (reemplaza al viejo enum EstadoTarea por columnas creadas por el usuario).
+ *    (reemplaza al viejo enum EstadoTarea por columnas que vos creas).
  *  - ManyToMany con Usuario: una tarea puede tener varios usuarios
- *    asignados y un usuario puede tener varias tareas.
+ *    asignados, y un usuario puede tener varias tareas.
  *
  * Esta clase es el lado "dueño" del ManyToMany (la que tiene el
- * @JoinTable), por eso es la que define como se llama la tabla
+ * @JoinTable), asi que es la que define como se llama la tabla
  * intermedia y sus columnas.
  */
 @Entity
@@ -44,19 +44,19 @@ public class Tarea {
     private LocalDate fechaLimite;
 
     // Relacion ManyToOne: en que columna del tablero esta esta tarea.
-    // Columna no tiene una coleccion de vuelta hacia Tarea, asi que no
-    // hace falta @JsonIgnoreProperties aca (no hay loop que cortar).
+    // Columna no tiene una coleccion de vuelta hacia Tarea, asi que
+    // aca no hace falta @JsonIgnoreProperties (no hay loop que cortar).
     @NotNull(message = "La tarea debe pertenecer a una columna")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "columna_id", nullable = false)
     private Columna columna;
 
     // Relacion ManyToOne: muchas tareas -> un proyecto.
-    // @NotNull para que Hibernate Validator obligue a que toda tarea
-    // tenga un proyecto asociado al crearla.
-    // Fetch EAGER (default de @ManyToOne) porque siempre devolvemos el
-    // proyecto junto con la tarea en la API; con LAZY, Jackson no puede
-    // serializar el proxy de Hibernate y explota al armar el JSON.
+    // @NotNull para que Hibernate Validator te obligue a que toda
+    // tarea tenga un proyecto asociado al crearla.
+    // Fetch EAGER (el default de @ManyToOne) porque siempre devolvemos
+    // el proyecto junto con la tarea en la API; con LAZY, Jackson no
+    // puede serializar el proxy de Hibernate y explota al armar el JSON.
     @NotNull(message = "La tarea debe pertenecer a un proyecto")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "proyecto_id", nullable = false)

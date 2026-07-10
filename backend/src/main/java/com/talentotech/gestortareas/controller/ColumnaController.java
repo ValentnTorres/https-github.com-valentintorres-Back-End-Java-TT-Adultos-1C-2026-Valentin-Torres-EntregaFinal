@@ -11,8 +11,8 @@ import java.util.List;
 
 /**
  * Controller REST de Columna. Ademas del CRUD sobre /api/columnas,
- * expone un endpoint para reordenar todo el tablero de una vez
- * (arrastrar una columna a otra posicion).
+ * expone un endpoint aparte para reordenar todo el tablero de una,
+ * cuando arrastras una columna a otra posicion.
  */
 @RestController
 @RequestMapping("/api/columnas")
@@ -46,8 +46,8 @@ public class ColumnaController {
         return ResponseEntity.noContent().build();
     }
 
-    // Recibe la lista de ids de columna en el nuevo orden (de izquierda
-    // a derecha) y devuelve el tablero ya reordenado.
+    // Recibe la lista de ids de columna en el orden nuevo (de
+    // izquierda a derecha) y te devuelve el tablero ya reordenado.
     @PutMapping("/reordenar")
     public List<Columna> reordenar(@RequestBody List<Long> idsEnOrden) {
         return columnaService.reordenar(idsEnOrden);

@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controller REST de Proyecto. Expone el CRUD sobre /api/proyectos.
+ * Controller REST de Proyecto. Expone el CRUD sobre /api/proyectos,
+ * sin ninguna logica de negocio propia (esa complejidad esta
+ * concentrada en TareaService).
  */
 @RestController
 @RequestMapping("/api/proyectos")

@@ -29,8 +29,15 @@ import {
 import { listarProyectos } from "../api/proyectosApi";
 import { listarUsuarios } from "../api/usuariosApi";
 import Mensaje from "./Mensaje";
+import Skeleton from "./Skeleton";
 import TareaCard from "./TareaCard";
 import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
+
+// Cantidad de columnas/tarjetas esqueleto mientras carga el tablero por
+// primera vez (no hay forma de saber cuantas columnas/tareas hay antes
+// de que responda la API).
+const COLUMNAS_ESQUELETO = 3;
+const TARJETAS_ESQUELETO_POR_COLUMNA = 2;
 
 function formVacio(columnaIdInicial = "") {
   return {
@@ -53,6 +60,7 @@ function TareasPage() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroProyectoId, setFiltroProyectoId] = useState("");
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(true);
   // Guarda que usuario esta seleccionado en el select de "asignar"
   // de cada tarjeta (una entrada por id de tarea).
   const [usuarioParaAsignar, setUsuarioParaAsignar] = useState({});
@@ -81,6 +89,8 @@ function TareasPage() {
       setUsuarios(usuariosData);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setCargando(false);
     }
   }
 
@@ -270,6 +280,8 @@ function TareasPage() {
   }
 
   async function manejarEliminarColumna(columna) {
+    if (!window.confirm(`¿Eliminar la columna "${columna.nombre}"?`)) return;
+
     setError("");
     try {
       await eliminarColumna(columna.id);
@@ -347,9 +359,13 @@ function TareasPage() {
                 )}
               </div>
             )}
-            <span className="tablero-contador dato-mono">
-              {tareasVisibles.length} / {tareas.length} tareas
-            </span>
+            {cargando ? (
+              <Skeleton width="70px" height="12px" />
+            ) : (
+              <span className="tablero-contador dato-mono">
+                {tareasVisibles.length} / {tareas.length} tareas
+              </span>
+            )}
           </div>
         </div>
 
@@ -462,14 +478,35 @@ function TareasPage() {
       <Mensaje texto={error} />
 
       <div className="tablero">
-        {columnas.map((columna, indiceColumna) => {
+        {cargando ? (
+          Array.from({ length: COLUMNAS_ESQUELETO }).map((_, indiceColumna) => (
+            <div className="columna" key={indiceColumna}>
+              <div className="columna-header">
+                <div className="columna-header-fila">
+                  <Skeleton width="90px" height="12px" />
+                </div>
+              </div>
+              <div className="columna-cuerpo">
+                {Array.from({ length: TARJETAS_ESQUELETO_POR_COLUMNA }).map((_, indiceTarjeta) => (
+                  <div className="tarjeta" key={indiceTarjeta}>
+                    <Skeleton width="70%" height="14px" />
+                    <Skeleton className="skeleton-linea" width="90%" height="12px" />
+                    <Skeleton className="skeleton-linea" width="50%" height="12px" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            {columnas.map((columna, indiceColumna) => {
           const tareasDeLaColumna = tareasVisibles.filter((t) => t.columna.id === columna.id);
           const seEstaRenombrando = columnaEnEdicionId === columna.id;
 
           return (
             <div
               key={columna.id}
-              className={`columna${columna.esFinal ? " columna--final" : ""}${
+              className={`columna fade-in-suave${columna.esFinal ? " columna--final" : ""}${
                 columnaResaltada === columna.id ? " columna-resaltada" : ""
               }`}
               onDragOver={manejarDragOver}
@@ -627,6 +664,8 @@ function TareasPage() {
             </button>
           )}
         </div>
+          </>
+        )}
       </div>
     </section>
   );

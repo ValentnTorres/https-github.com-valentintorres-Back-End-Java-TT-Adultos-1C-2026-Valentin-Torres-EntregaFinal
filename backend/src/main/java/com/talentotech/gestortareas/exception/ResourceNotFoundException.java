@@ -1,9 +1,9 @@
 package com.talentotech.gestortareas.exception;
 
 /**
- * Excepcion personalizada que lanzamos cuando se busca por id
- * (Usuario, Proyecto o Tarea) y no existe en la base de datos.
- * La captura GlobalExceptionHandler y la traduce a un 404.
+ * Excepcion personalizada que tiramos cuando buscas algo por id
+ * (Usuario, Proyecto, Tarea, lo que sea) y no existe en la base.
+ * La agarra GlobalExceptionHandler y la traduce a un 404.
  */
 public class ResourceNotFoundException extends RuntimeException {
 

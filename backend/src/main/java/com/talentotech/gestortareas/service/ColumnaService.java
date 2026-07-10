@@ -14,8 +14,9 @@ import java.util.List;
  * Service de Columna: las columnas del tablero Kanban (equivalentes a
  * las "listas" de Trello). A diferencia de Proyecto y Usuario, ademas
  * del CRUD tiene dos reglas propias:
- *  - no se puede borrar una columna que todavia tiene tareas;
- *  - reordenar el tablero completo, recalculando la posicion de cada columna.
+ *  - no te deja borrar una columna que todavia tiene tareas;
+ *  - reordenar el tablero completo, recalculando la posicion de cada
+ *    columna.
  */
 @Service
 public class ColumnaService {
@@ -37,9 +38,9 @@ public class ColumnaService {
                 .orElseThrow(() -> new ResourceNotFoundException("No existe una columna con id " + id));
     }
 
-    // Una columna nueva siempre se agrega al final del tablero (a la
-    // derecha de todas las demas), sin importar que "orden" haya
-    // mandado el cliente: evita huecos o numeros duplicados.
+    // Una columna nueva siempre va al final del tablero (a la derecha
+    // de todas las demas), sin importar que "orden" te haya mandado el
+    // cliente: asi evitamos huecos o numeros duplicados.
     public Columna crear(Columna columna) {
         int siguienteOrden = columnaRepository.findAllByOrderByOrdenAsc().stream()
                 .mapToInt(Columna::getOrden)
@@ -64,9 +65,9 @@ public class ColumnaService {
         columnaRepository.delete(columna);
     }
 
-    // Recibe los ids de todas las columnas en el nuevo orden (de
+    // Recibe los ids de todas las columnas en el orden nuevo (de
     // izquierda a derecha) y reasigna el campo "orden" de cada una
-    // segun su posicion en esa lista.
+    // segun donde quedo en esa lista.
     public List<Columna> reordenar(List<Long> idsEnOrden) {
         List<Columna> resultado = new ArrayList<>();
         for (int posicion = 0; posicion < idsEnOrden.size(); posicion++) {

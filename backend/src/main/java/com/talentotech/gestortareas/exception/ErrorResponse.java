@@ -5,8 +5,9 @@ import java.util.List;
 
 /**
  * Estructura fija de respuesta para cualquier error de la API.
- * La usa GlobalExceptionHandler para que el frontend siempre reciba
- * el mismo formato de JSON sin importar que excepcion haya ocurrido.
+ * La usa GlobalExceptionHandler para que el frontend siempre se
+ * encuentre con el mismo formato de JSON, pase lo que pase del lado
+ * del backend.
  */
 public class ErrorResponse {
 

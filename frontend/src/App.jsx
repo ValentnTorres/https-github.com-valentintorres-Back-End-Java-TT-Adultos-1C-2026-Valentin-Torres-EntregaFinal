@@ -8,6 +8,8 @@ import { useState } from "react";
 import ProyectosPage from "./components/ProyectosPage";
 import UsuariosPage from "./components/UsuariosPage";
 import TareasPage from "./components/TareasPage";
+import LoginPage from "./components/LoginPage";
+import { obtenerSesion, borrarSesion } from "./api/config";
 import "./App.css";
 
 const PESTANAS = [
@@ -18,6 +20,17 @@ const PESTANAS = [
 
 function App() {
   const [pestanaActiva, setPestanaActiva] = useState("proyectos");
+  // Si ya hay un token guardado de una visita anterior, arranca logueado.
+  const [usuario, setUsuario] = useState(() => obtenerSesion()?.usuario ?? null);
+
+  function cerrarSesion() {
+    borrarSesion();
+    setUsuario(null);
+  }
+
+  if (!usuario) {
+    return <LoginPage onLogin={setUsuario} />;
+  }
 
   return (
     <div className="app-shell">
@@ -43,12 +56,34 @@ function App() {
             </button>
           ))}
         </nav>
+        <div className="carbon-header-sesion">
+          <span>{usuario.nombre}</span>
+          <button onClick={cerrarSesion}>Cerrar sesión</button>
+        </div>
       </header>
 
-      <main className="app-main">
-        {pestanaActiva === "proyectos" && <ProyectosPage />}
-        {pestanaActiva === "usuarios" && <UsuariosPage />}
-        {pestanaActiva === "tareas" && <TareasPage />}
+      {/* El tablero de Tareas usa un modificador aparte (app-main-tablero)
+          que saca el max-width/centrado y ocupa todo el ancho y alto
+          disponibles: a diferencia de Proyectos/Usuarios (formularios y
+          listas angostas), el Kanban aprovecha mejor toda la pantalla. */}
+      <main className={pestanaActiva === "tareas" ? "app-main app-main-tablero" : "app-main"}>
+        {/* Las 3 paginas quedan montadas todo el tiempo (se ocultan con
+            "hidden", no se desmontan). Si en vez de esto renderizaramos
+            solo la pestaña activa, cada cambio de pestaña destruiria el
+            componente anterior junto con los datos que ya habia
+            cargado, obligando a volver a pedirselos a la API (y a
+            mostrar el esqueleto) cada vez que volves a una pestaña que
+            ya habias visitado. Asi, cada pagina pide sus datos una sola
+            vez al arrancar la app, y cambiar de pestaña es instantaneo. */}
+        <div hidden={pestanaActiva !== "proyectos"}>
+          <ProyectosPage />
+        </div>
+        <div hidden={pestanaActiva !== "usuarios"}>
+          <UsuariosPage />
+        </div>
+        <div hidden={pestanaActiva !== "tareas"}>
+          <TareasPage />
+        </div>
       </main>
     </div>
   );

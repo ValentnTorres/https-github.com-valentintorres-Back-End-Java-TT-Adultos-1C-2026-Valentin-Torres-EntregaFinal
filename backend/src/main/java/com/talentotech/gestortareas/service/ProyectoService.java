@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Service de Proyecto. CRUD basico, sin reglas de negocio extra:
- * la complejidad de este dominio esta concentrada en TareaService.
+ * Service de Proyecto. CRUD basico, sin reglas de negocio propias:
+ * toda la complejidad de este dominio esta concentrada en TareaService.
  */
 @Service
 public class ProyectoService {

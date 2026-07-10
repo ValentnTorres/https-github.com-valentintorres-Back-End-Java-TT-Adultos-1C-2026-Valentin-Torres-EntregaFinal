@@ -9,24 +9,36 @@ import {
   eliminarProyecto,
 } from "../api/proyectosApi";
 import Mensaje from "./Mensaje";
+import Skeleton from "./Skeleton";
 
 const FORM_VACIO = { nombre: "", descripcion: "" };
+// Cantidad de filas esqueleto a mostrar mientras carga. No hay forma de
+// saber cuantos proyectos hay antes de que responda la API, asi que se
+// muestra solo 1: si se muestran varias y despues resulta que hay menos
+// proyectos reales, la lista "se encoge" de golpe al terminar de cargar,
+// que se ve peor que el salto (minimo) de ir de 1 fila esqueleto a 1 fila real.
+const FILAS_ESQUELETO = 1;
 
 function ProyectosPage() {
   const [proyectos, setProyectos] = useState([]);
   const [form, setForm] = useState(FORM_VACIO);
   const [idEnEdicion, setIdEnEdicion] = useState(null);
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(true);
 
   // Trae la lista de proyectos del backend. La llamamos al montar el
   // componente y despues de cada crear/editar/borrar para mantener la
-  // lista sincronizada con la base de datos.
+  // lista sincronizada con la base de datos. "cargando" solo importa la
+  // primera vez (las veces siguientes ya esta en false y no vuelve a
+  // mostrar el esqueleto).
   async function cargarProyectos() {
     try {
       const datos = await listarProyectos();
       setProyectos(datos);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setCargando(false);
     }
   }
 
@@ -66,10 +78,17 @@ function ProyectosPage() {
     setForm(FORM_VACIO);
   }
 
-  async function manejarEliminar(id) {
+  async function manejarEliminar(proyecto) {
+    // Borrar un proyecto borra en cascada todas sus tareas (no hay forma
+    // de deshacerlo despues), asi que conviene confirmar antes.
+    const confirmado = window.confirm(
+      `¿Eliminar el proyecto "${proyecto.nombre}"? Esto también borra todas sus tareas.`
+    );
+    if (!confirmado) return;
+
     setError("");
     try {
-      await eliminarProyecto(id);
+      await eliminarProyecto(proyecto.id);
       await cargarProyectos();
     } catch (err) {
       setError(err.message);
@@ -118,19 +137,34 @@ function ProyectosPage() {
       <Mensaje texto={error} />
 
       <ul className="lista">
-        {proyectos.map((proyecto) => (
-          <li key={proyecto.id}>
-            <div>
-              <strong>{proyecto.nombre}</strong>
-              {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
-            </div>
-            <div className="acciones">
-              <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
-              <button onClick={() => manejarEliminar(proyecto.id)}>Eliminar</button>
-            </div>
-          </li>
-        ))}
-        {proyectos.length === 0 && <p>Todavia no hay proyectos cargados.</p>}
+        {cargando &&
+          Array.from({ length: FILAS_ESQUELETO }).map((_, indice) => (
+            <li key={indice}>
+              <div>
+                <Skeleton width="160px" height="16px" />
+                <Skeleton className="skeleton-linea" width="220px" height="12px" />
+              </div>
+              <div className="acciones">
+                <Skeleton width="64px" height="34px" />
+                <Skeleton width="74px" height="34px" />
+              </div>
+            </li>
+          ))}
+
+        {!cargando &&
+          proyectos.map((proyecto) => (
+            <li key={proyecto.id} className="fade-in-suave">
+              <div>
+                <strong>{proyecto.nombre}</strong>
+                {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
+              </div>
+              <div className="acciones">
+                <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
+                <button onClick={() => manejarEliminar(proyecto)}>Eliminar</button>
+              </div>
+            </li>
+          ))}
+        {!cargando && proyectos.length === 0 && <p className="fade-in-suave">Todavia no hay proyectos cargados.</p>}
       </ul>
     </section>
   );

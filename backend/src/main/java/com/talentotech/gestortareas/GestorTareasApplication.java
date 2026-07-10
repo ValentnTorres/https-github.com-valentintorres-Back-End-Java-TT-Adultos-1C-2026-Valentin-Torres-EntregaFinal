@@ -6,16 +6,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Clase principal de la aplicacion.
  *
- * @SpringBootApplication prende el auto-configurado de Spring Boot:
- * levanta el servidor web embebido (Tomcat), escanea los paquetes de
- * este mismo paquete y subpaquetes buscando @Component/@Service/
- * @Repository/@RestController, y configura JPA con lo que haya en
- * application.properties.
+ * @SpringBootApplication prende todo el auto-configurado de Spring
+ * Boot de una: levanta el servidor web embebido (Tomcat), escanea este
+ * paquete y los subpaquetes buscando @Component/@Service/@Repository/
+ * @RestController, y configura JPA con lo que haya en
+ * application.properties. No hace falta tocar nada mas aca.
  *
- * Flujo general de la app: al ejecutar main(), Spring arma el
- * contexto -> conecta con MySQL -> crea/actualiza las tablas segun
- * las entidades (model) -> queda escuchando peticiones HTTP en el
- * puerto 8080 (controller -> service -> repository -> base de datos).
+ * Flujo general de la app: al correr main(), Spring arma el contexto,
+ * se conecta a MySQL, crea o actualiza las tablas segun las entidades
+ * (model) y se queda escuchando peticiones HTTP en el puerto que
+ * corresponda (controller -> service -> repository -> base de datos).
  */
 @SpringBootApplication
 public class GestorTareasApplication {

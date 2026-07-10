@@ -13,10 +13,10 @@ import java.util.Set;
  *
  * Es el "contenedor" de Tareas. La relacion Proyecto -> Tarea es
  * OneToMany (del lado inverso), y Tarea -> Proyecto es ManyToOne
- * (varias tareas pueden pertenecer al mismo proyecto).
+ * (varias tareas pueden ser del mismo proyecto).
  *
- * mappedBy = "proyecto" le indica a JPA que la columna de la relacion
- * (proyecto_id) vive en la tabla tareas, no aca.
+ * mappedBy = "proyecto" le dice a JPA que la columna de la relacion
+ * (proyecto_id) vive en la tabla tareas, no en esta.
  */
 @Entity
 @Table(name = "proyectos")
@@ -36,7 +36,7 @@ public class Proyecto {
     private String descripcion;
 
     // Ignoramos "proyecto" y "usuariosAsignados" al serializar las tareas
-    // para evitar el loop infinito Proyecto -> Tarea -> Proyecto -> Tarea...
+    // para no entrar en el loop infinito Proyecto -> Tarea -> Proyecto -> Tarea...
     @OneToMany(mappedBy = "proyecto", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"proyecto", "usuariosAsignados"})
     private Set<Tarea> tareas = new HashSet<>();

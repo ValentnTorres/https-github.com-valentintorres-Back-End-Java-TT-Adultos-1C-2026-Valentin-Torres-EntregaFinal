@@ -1,6 +1,7 @@
 package com.talentotech.gestortareas.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,14 +13,16 @@ import java.util.Set;
 /**
  * Entidad Usuario.
  *
- * Representa a una persona que puede ser asignada a una o mas Tareas.
- * La relacion con Tarea es ManyToMany: un usuario puede tener varias
- * tareas asignadas, y una tarea puede tener varios usuarios asignados.
+ * Representa a una persona que puede ser asignada a una o mas Tareas
+ * (y que ademas puede loguearse con este mismo email/password, ver
+ * AuthController). La relacion con Tarea es ManyToMany: un usuario
+ * puede tener varias tareas asignadas, y una tarea puede tener varios
+ * usuarios asignados.
  *
- * El lado "dueño" de la relacion ManyToMany esta en Tarea (alli esta
- * la tabla intermedia @JoinTable). Aca del lado de Usuario usamos
+ * El lado "dueño" de la relacion ManyToMany esta en Tarea (ahi esta
+ * la tabla intermedia @JoinTable). Del lado de Usuario usamos
  * "mappedBy" para que JPA sepa que esta es la relacion inversa, y
- * @JsonIgnoreProperties para que al convertir a JSON no entre en un
+ * @JsonIgnoreProperties para que al convertir a JSON no entres en un
  * loop infinito Usuario -> Tarea -> Usuario -> Tarea...
  */
 @Entity
@@ -39,6 +42,17 @@ public class Usuario {
     @Email(message = "El email no tiene un formato valido")
     @Column(nullable = false, unique = true, length = 150)
     private String email;
+
+    // Hash BCrypt de la contraseña (nunca se guarda en texto plano).
+    // Sin @NotBlank/@Size aca a proposito: el PUT de edicion reutiliza
+    // esta misma clase como @RequestBody y no manda password, asi que
+    // esa validacion se hace a mano en UsuarioService.crear() en vez
+    // de con Bean Validation (que te aplicaria tambien en el PUT).
+    // @JsonProperty WRITE_ONLY: el campo se acepta al crear un usuario
+    // (registro) pero nunca se devuelve en las respuestas JSON.
+    @Column(nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
 
     // Lado inverso de la relacion ManyToMany, no genera columnas nuevas.
     // Ignoramos "tareas" al serializar para no arrastrar toda la cadena de
@@ -77,6 +91,14 @@ public class Usuario {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Set<Tarea> getTareas() {

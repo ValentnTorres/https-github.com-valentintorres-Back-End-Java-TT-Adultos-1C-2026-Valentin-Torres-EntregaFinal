@@ -104,7 +104,13 @@ function TareaCard({
         </div>
         <div className="tarjeta-acciones">
           <button onClick={() => onEditar(tarea)}>Editar</button>
-          <button onClick={() => onEliminar(tarea.id)}>Eliminar</button>
+          <button
+            onClick={() => {
+              if (window.confirm(`¿Eliminar la tarea "${tarea.titulo}"?`)) onEliminar(tarea.id);
+            }}
+          >
+            Eliminar
+          </button>
         </div>
       </div>
     </div>

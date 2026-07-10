@@ -12,12 +12,12 @@ import jakarta.validation.constraints.Size;
 /**
  * Entidad Columna: representa una columna del tablero Kanban (como las
  * "listas" de Trello). Reemplaza al viejo enum EstadoTarea: en vez de
- * tener 3 estados fijos, el usuario puede crear, renombrar, reordenar
- * y borrar sus propias columnas.
+ * tener 3 estados fijos, podes crear, renombrar, reordenar y borrar
+ * tus propias columnas.
  *
  * "esFinal" generaliza la vieja regla de negocio de "no asignar un
- * usuario a una tarea COMPLETADA": ahora se aplica a cualquier columna
- * marcada como final (ver TareaService.asignarUsuario).
+ * usuario a una tarea COMPLETADA": ahora se le aplica a cualquier
+ * columna marcada como final (ver TareaService.asignarUsuario).
  */
 @Entity
 @Table(name = "columnas")
@@ -39,8 +39,7 @@ public class Columna {
     private Integer orden;
 
     // Si es true, las tareas de esta columna se consideran "terminadas":
-    // no se les puede asignar (ni desasignar tendria sentido revisar)
-    // nuevos usuarios.
+    // no les podes asignar mas usuarios nuevos.
     @Column(nullable = false)
     private boolean esFinal = false;
 

@@ -12,9 +12,9 @@ import java.util.List;
 /**
  * Controller REST de Usuario.
  *
- * Expone el CRUD sobre /api/usuarios. Este controller no tiene logica
- * de negocio: solo recibe la request, valida el body (@Valid) y le
- * delega el trabajo a UsuarioService.
+ * Expone el CRUD sobre /api/usuarios. No tiene logica de negocio
+ * propia: solo recibe la request, valida el body (@Valid) y le pasa
+ * el trabajo a UsuarioService.
  */
 @RestController
 @RequestMapping("/api/usuarios")
