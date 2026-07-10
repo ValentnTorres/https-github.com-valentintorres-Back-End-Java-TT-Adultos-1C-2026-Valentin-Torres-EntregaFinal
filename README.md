@@ -169,9 +169,21 @@ todas las llamadas a la API (ver `frontend/src/api/config.js`).
 | POST   | `/api/tareas/{tareaId}/usuarios/{usuarioId}` | Asignar un usuario a una tarea       | Sí   |
 | DELETE | `/api/tareas/{tareaId}/usuarios/{usuarioId}` | Quitar un usuario de una tarea       | Sí   |
 
+## Probar la API con Postman
+
+Para no tener que armar cada request a mano, en la raíz del repo está [`postman_collection.json`](./postman_collection.json) con todos los endpoints ya cargados (login, registro, y el CRUD completo de proyectos/columnas/usuarios/tareas, incluyendo asignar/quitar usuarios).
+
+Cómo usarla:
+
+1. En Postman: **Import** → arrastrar `postman_collection.json`.
+2. La variable de colección `base_url` ya viene apuntando al deploy en Render. Para probar en local, editarla a `http://localhost:8080/api` (ícono del ojo, arriba a la derecha, o Edit → Variables).
+3. Correr **Auth → Login** (o **Usuarios → Registrar usuario** primero si todavía no hay ninguna cuenta creada).
+4. Copiar el `token` de la respuesta y pegarlo en la variable de colección `token`.
+5. De ahí en adelante, todos los demás requests ya usan ese token solos (`Authorization: Bearer {{token}}`), no hace falta tocar nada más.
+
 ## Ejemplos de uso (datos de prueba)
 
-Los siguientes `curl` funcionan tanto contra el backend local como contra el deploy en vivo — solo hay que cambiar la variable `BASE`:
+Los mismos endpoints, pero por `curl` en vez de Postman. Funcionan tanto contra el backend local como contra el deploy en vivo — solo hay que cambiar la variable `BASE`:
 
 ```bash
 # En local:
