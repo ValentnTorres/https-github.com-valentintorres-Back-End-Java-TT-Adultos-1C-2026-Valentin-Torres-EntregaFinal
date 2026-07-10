@@ -13,6 +13,18 @@ Proyecto final del curso de Back-End Java (Talento Tech Buenos Aires). Es una ap
 
 Para probar la API directo (sin pasar por el frontend), ver la sección [Ejemplos de uso](#ejemplos-de-uso-datos-de-prueba) más abajo: los mismos `curl` sirven contra `localhost:8080` o contra la URL de Render de arriba, cambiando solo la base.
 
+### Cuentas de prueba
+
+Para no tener que registrarse ni promover una cuenta a mano, ya hay 3 usuarios cargados en la base de producción, uno por cada rol (ver [Autenticación y roles](#autenticación-y-roles)):
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| ADMIN | `valen@valen.com` | `valentin123456` |
+| PM | `pm@pm.com` | `pmtest` |
+| USER | `usuario@usuario.com` | `usuariotest` |
+
+El usuario `USER` ya está asignado al `PM`, y el `PM` ya tiene un proyecto creado — entrando con cualquiera de las 3 cuentas se puede ver de entrada cómo cambia la visibilidad según el rol (el `ADMIN` ve todo y la pestaña "Usuarios", el `PM` solo su proyecto, el `USER` solo el proyecto de su PM y sin poder crear/editar proyectos).
+
 ## Descripción del proyecto
 
 Permite administrar **Proyectos**, **Columnas**, **Usuarios** y **Tareas**. El tablero de tareas es un Kanban al estilo Trello: las columnas (`Pendiente`, `En progreso`, `Completada` por defecto) no son un valor fijo, se pueden crear, renombrar, reordenar y borrar desde la interfaz.
