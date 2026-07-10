@@ -3,12 +3,13 @@
    propios de cada seccion (header, tabs, formularios, tablero) estan
    en App.css para no mezclar todo en un solo archivo.
 
-   Carbon se reconoce por: tipografia IBM Plex Sans, esquinas rectas
-   (sin border-radius en botones/inputs/tarjetas), azul de acento
-   #0f62fe, y un foco de 2px bien marcado en vez de sombras difusas.
-   Sumamos IBM Plex Mono (--font-mono) como fuente utilitaria para
-   datos (fechas, contadores), y un verde de estado (--cds-green-60,
-   tambien un token real de Carbon) para el tablero de tareas. */
+   Carbon se reconoce por: esquinas rectas (sin border-radius en
+   botones/inputs/tarjetas), azul de acento #0f62fe, y un foco de 2px
+   bien marcado en vez de sombras difusas. La tipografia principal es
+   Jost (en vez de la IBM Plex Sans "de fabrica" de Carbon). Sumamos
+   IBM Plex Mono (--font-mono) como fuente utilitaria para datos
+   (fechas, contadores), y un verde de estado (--cds-green-60, tambien
+   un token real de Carbon) para el tablero de tareas. */
 :root {
   /* La app es solo tema claro (no hay modo oscuro implementado). Sin
      esto, algunos navegadores re-tematizan automaticamente los
@@ -37,7 +38,7 @@
   --cds-yellow-70: #684e00;
   --cds-white: #ffffff;
 
-  --font-sans: "IBM Plex Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Jost", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
 
   /* Una sola curva de transicion para toda la app: asi los hovers y
