@@ -80,7 +80,18 @@ Se necesitan 3 cosas corriendo: **MySQL**, el **backend** (puerto 8080) y el **f
 
 ### 1. Base de datos
 
-Requisito: MySQL corriendo en `localhost:3306`.
+Requisito: tener MySQL instalado y **corriendo** en `localhost:3306` (el puerto por defecto).
+
+Si no tenés MySQL instalado todavía, la forma más simple es [XAMPP](https://www.apachefriends.org/) (trae MySQL + un panel para prenderlo/apagarlo con un click) o el [instalador oficial de MySQL Community Server](https://dev.mysql.com/downloads/mysql/).
+
+Cómo arrancarlo si ya está instalado pero no está corriendo:
+
+- **XAMPP**: abrir el Panel de Control de XAMPP → click en **Start** al lado de "MySQL".
+- **Windows, instalado con el instalador oficial**: normalmente arranca solo como servicio de Windows al prender la PC. Si no, abrir "Servicios" (`services.msc`) y buscar un servicio llamado `MySQL80` (o similar) → click derecho → Iniciar. Por consola (como administrador): `net start MySQL80`.
+- **Mac (instalado con Homebrew)**: `brew services start mysql`.
+- **Linux**: `sudo systemctl start mysql` (o `mysqld`, según la distro).
+
+Para confirmar que está corriendo, cualquier cliente de MySQL (MySQL Workbench, phpMyAdmin de XAMPP, DBeaver, o la consola `mysql`/`mysqlsh`) tiene que poder conectarse a `localhost:3306`.
 
 Crear la base (vacía, sin tablas — el backend las crea solo al arrancar):
 
