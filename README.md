@@ -76,27 +76,53 @@ frontend/   -> Interfaz web (React + Vite)
 
 ## Cómo ejecutar en local
 
-### Backend
+Se necesitan 3 cosas corriendo: **MySQL**, el **backend** (puerto 8080) y el **frontend** (puerto 5173). El orden importa: primero la base, después el backend, después el frontend.
 
-Requisitos: Java 17 y MySQL corriendo en `localhost:3306`.
+### 1. Base de datos
 
-1. Crear la base de datos (o dejar que se cree sola, ver `application.properties`):
-   ```sql
-   CREATE DATABASE gestor_tareas;
-   ```
-2. Revisar el usuario/contraseña de MySQL en `backend/src/main/resources/application.properties` (por defecto `root` sin contraseña, como viene XAMPP) y ajustarlo si hace falta.
-3. Pararse en la carpeta `backend` y levantar la app:
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run
-   ```
-4. La API queda escuchando en `http://localhost:8080`.
+Requisito: MySQL corriendo en `localhost:3306`.
 
-Al arrancar, Hibernate crea automáticamente las tablas (`usuarios`, `proyectos`, `tareas`, `columnas`, `tarea_usuario`) según las entidades.
+Crear la base (vacía, sin tablas — el backend las crea solo al arrancar):
 
-### Frontend
+```sql
+CREATE DATABASE IF NOT EXISTS gestor_tareas;
+```
 
-Requisitos: Node.js.
+Si tu MySQL no es `root` sin contraseña (el default que asume `application.properties`, pensado para XAMPP), no hace falta tocar ningún archivo: alcanza con setear una variable de entorno antes de levantar el backend.
+
+- **Windows (PowerShell)**:
+  ```powershell
+  $env:SPRING_DATASOURCE_PASSWORD = "tu-password-de-mysql"
+  ```
+- **Mac / Linux (bash)**:
+  ```bash
+  export SPRING_DATASOURCE_PASSWORD="tu-password-de-mysql"
+  ```
+
+(Esto solo dura mientras esa terminal esté abierta — hay que repetirlo cada vez, o setearlo de forma permanente con `setx` en Windows o agregándolo al `.bashrc`/`.zshrc` en Mac/Linux).
+
+### 2. Backend
+
+Requisito: Java 17. Parado en la carpeta `backend`:
+
+- **Windows (PowerShell o CMD)**:
+  ```
+  cd backend
+  .\mvnw.cmd spring-boot:run
+  ```
+- **Mac / Linux**:
+  ```bash
+  cd backend
+  ./mvnw spring-boot:run
+  ```
+
+La primera vez tarda un poco más (Maven descarga las dependencias). Cuando termina de arrancar se ve una línea tipo `Started GestorTareasApplication in X seconds`, y la API queda escuchando en `http://localhost:8080`.
+
+Al arrancar contra una base **vacía**, Hibernate crea solo todas las tablas (`usuarios`, `proyectos`, `tareas`, `columnas`, `tarea_usuario`) y además **se cargan automáticamente las 3 cuentas de prueba** (una por rol) — son las mismas de la sección [Cuentas de prueba](#cuentas-de-prueba) de más arriba, así que se puede entrar directo desde el frontend con esas credenciales sin registrarse ni tocar la base a mano.
+
+### 3. Frontend
+
+Requisito: Node.js. En otra terminal, parado en la carpeta `frontend`:
 
 ```bash
 cd frontend
@@ -104,7 +130,7 @@ npm install
 npm run dev
 ```
 
-El frontend queda disponible en `http://localhost:5173` y ya está configurado para llamar a la API en `http://localhost:8080` (ver `frontend/src/api/config.js`). Para que funcione, el backend tiene que estar corriendo.
+El frontend queda disponible en `http://localhost:5173` y ya está configurado para llamar a la API en `http://localhost:8080` (ver `frontend/src/api/config.js`). Para que funcione, el backend tiene que estar corriendo (paso 2).
 
 ## Deploy
 
