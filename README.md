@@ -80,26 +80,39 @@ Se necesitan 3 cosas corriendo: **MySQL**, el **backend** (puerto 8080) y el **f
 
 ### 1. Base de datos
 
-Requisito: tener MySQL instalado y **corriendo** en `localhost:3306` (el puerto por defecto).
+Requisito: tener MySQL instalado y **corriendo** en `localhost:3306` (el puerto por defecto). Dos opciones simples si no lo tenés instalado todavía (elegir una sola):
 
-Si no tenés MySQL instalado todavía, la forma más simple es [XAMPP](https://www.apachefriends.org/) (trae MySQL + un panel para prenderlo/apagarlo con un click) o el [instalador oficial de MySQL Community Server](https://dev.mysql.com/downloads/mysql/).
+#### Opción A: XAMPP
 
-Cómo arrancarlo si ya está instalado pero no está corriendo:
+1. Descargar e instalar [XAMPP](https://www.apachefriends.org/).
+2. Abrir el **Panel de Control de XAMPP** → click en **Start** al lado de "MySQL".
+3. Crear la base de datos, de cualquiera de las dos formas:
+   - **Por phpMyAdmin** (botón "Admin" al lado de MySQL en el panel, o `http://localhost/phpmyadmin`): pestaña **Bases de datos** → escribir `gestor_tareas` como nombre → **Crear**. No hace falta elegir ninguna tabla ni cotejamiento especial, se deja vacía.
+   - **Por SQL** (pestaña "SQL" de phpMyAdmin, o la consola de MySQL):
+     ```sql
+     CREATE DATABASE IF NOT EXISTS gestor_tareas;
+     ```
+4. XAMPP trae MySQL con el usuario `root` **sin contraseña** por default, que es justo lo que ya asume `application.properties` — no hace falta configurar nada más.
 
-- **XAMPP**: abrir el Panel de Control de XAMPP → click en **Start** al lado de "MySQL".
-- **Windows, instalado con el instalador oficial**: normalmente arranca solo como servicio de Windows al prender la PC. Si no, abrir "Servicios" (`services.msc`) y buscar un servicio llamado `MySQL80` (o similar) → click derecho → Iniciar. Por consola (como administrador): `net start MySQL80`.
-- **Mac (instalado con Homebrew)**: `brew services start mysql`.
+#### Opción B: Laragon
+
+1. Descargar e instalar [Laragon](https://laragon.org/) (la versión "Full" ya trae MySQL incluido).
+2. Abrir Laragon y click en **Start All** (arranca MySQL, entre otros servicios). El ícono de MySQL en la ventana principal se pone verde cuando está corriendo.
+3. Crear la base de datos con **HeidiSQL** (el cliente de base de datos que trae Laragon integrado): en la ventana de Laragon, botón derecho → **Database** → **HeidiSQL**, o el ícono correspondiente en la barra de Laragon. Una vez adentro, botón derecho sobre la conexión (la de la izquierda, `localhost`) → **Create new** → **Database** → nombre `gestor_tareas` → **OK**.
+   - Alternativa por SQL: en HeidiSQL, pestaña de consulta, correr el mismo `CREATE DATABASE IF NOT EXISTS gestor_tareas;` de arriba.
+4. Laragon también trae `root` **sin contraseña** por default — tampoco hace falta configurar nada más.
+
+#### Si usás otra cosa (instalador oficial, Mac, Linux)
+
+Instalar el [MySQL Community Server oficial](https://dev.mysql.com/downloads/mysql/) y arrancarlo:
+
+- **Windows**: normalmente arranca solo como servicio al prender la PC. Si no, abrir "Servicios" (`services.msc`) → buscar `MySQL80` (o similar) → Iniciar. Por consola (como administrador): `net start MySQL80`.
+- **Mac (Homebrew)**: `brew services start mysql`.
 - **Linux**: `sudo systemctl start mysql` (o `mysqld`, según la distro).
 
-Para confirmar que está corriendo, cualquier cliente de MySQL (MySQL Workbench, phpMyAdmin de XAMPP, DBeaver, o la consola `mysql`/`mysqlsh`) tiene que poder conectarse a `localhost:3306`.
+Después, crear la base igual que arriba (`CREATE DATABASE IF NOT EXISTS gestor_tareas;`, con cualquier cliente: MySQL Workbench, DBeaver, o la consola `mysql`/`mysqlsh`).
 
-Crear la base (vacía, sin tablas — el backend las crea solo al arrancar):
-
-```sql
-CREATE DATABASE IF NOT EXISTS gestor_tareas;
-```
-
-Si tu MySQL no es `root` sin contraseña (el default que asume `application.properties`, pensado para XAMPP), no hace falta tocar ningún archivo: alcanza con setear una variable de entorno antes de levantar el backend.
+Si tu instalación pide contraseña para `root` (a diferencia de XAMPP/Laragon), no hace falta tocar ningún archivo: alcanza con setear una variable de entorno antes de levantar el backend.
 
 - **Windows (PowerShell)**:
   ```powershell
@@ -111,6 +124,10 @@ Si tu MySQL no es `root` sin contraseña (el default que asume `application.prop
   ```
 
 (Esto solo dura mientras esa terminal esté abierta — hay que repetirlo cada vez, o setearlo de forma permanente con `setx` en Windows o agregándolo al `.bashrc`/`.zshrc` en Mac/Linux).
+
+#### La migración del esquema y las cuentas de prueba son automáticas
+
+Sea cual sea la opción elegida, la base queda **vacía** (sin tablas) — no hace falta crear ninguna tabla ni correr ningún script de seed a mano. Todo eso lo hace el backend solo la primera vez que arranca (ver paso 2 de abajo): Hibernate crea las tablas, y como quedan vacías, automáticamente se cargan las 3 cuentas de prueba (una por rol). Ver [Cuentas de prueba](#cuentas-de-prueba) más arriba para las credenciales.
 
 ### 2. Backend
 
