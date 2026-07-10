@@ -160,6 +160,80 @@ npm run dev
 
 El frontend queda disponible en `http://localhost:5173` y ya está configurado para llamar a la API en `http://localhost:8080` (ver `frontend/src/api/config.js`). Para que funcione, el backend tiene que estar corriendo (paso 2).
 
+### Solución de problemas
+
+Errores típicos al levantar el proyecto por primera vez en una PC nueva, y cómo arreglarlos.
+
+<details>
+<summary><strong>"JAVA_HOME is not defined correctly" (al correr <code>mvnw</code> / <code>mvnw.cmd</code>)</strong></summary>
+
+Falta la variable de entorno `JAVA_HOME`, o apunta a una carpeta sin un JDK válido.
+
+1. Verificar si Java 17 está instalado: `java -version`.
+   - Si no lo reconoce como comando, instalar el JDK 17 de [Eclipse Temurin](https://adoptium.net/) (al instalar, marcar la opción "Set JAVA_HOME variable" si el instalador la ofrece).
+2. Si Java ya está instalado, encontrar la carpeta: `where java` (Windows) o `which java` (Mac/Linux) — da la ruta al ejecutable, algo como `...\jdk-17.0.9.9-hotspot\bin\java.exe`. `JAVA_HOME` tiene que ser esa ruta **sin** el `\bin\java.exe` final.
+3. Setearlo:
+   - **Windows (permanente)**: `setx JAVA_HOME "C:\ruta\al\jdk-17"` — después hay que **cerrar la terminal y abrir una nueva** para que tome el cambio.
+   - **Mac/Linux (permanente)**: agregar `export JAVA_HOME=$(/usr/libexec/java_home -v 17)` (Mac) o la ruta del JDK al `.bashrc`/`.zshrc`.
+4. Confirmar con `java -version` en una terminal nueva, y volver a correr `mvnw`.
+
+</details>
+
+<details>
+<summary><strong>"Access denied for user 'root'@'localhost'" (al levantar el backend)</strong></summary>
+
+El backend está intentando entrar a MySQL con una contraseña que no es la correcta (por defecto asume `root` sin contraseña, como viene XAMPP/Laragon).
+
+Setear la contraseña real de tu MySQL antes de levantar el backend (ver [paso 1](#1-base-de-datos) de arriba):
+
+- **Windows (PowerShell)**: `$env:SPRING_DATASOURCE_PASSWORD = "tu-password"`
+- **Mac/Linux**: `export SPRING_DATASOURCE_PASSWORD="tu-password"`
+
+Y volver a correr `mvnw spring-boot:run` **en la misma terminal** donde se seteó la variable.
+
+</details>
+
+<details>
+<summary><strong>"Communications link failure" / "Connection refused" (conectando a MySQL)</strong></summary>
+
+MySQL no está corriendo. Arrancarlo según cómo lo tengas instalado (XAMPP: Panel de Control → Start; Laragon: Start All; ver [paso 1](#1-base-de-datos) de arriba para más opciones), y recién ahí levantar el backend.
+
+</details>
+
+<details>
+<summary><strong>"Port 8080 was already in use" (al levantar el backend)</strong></summary>
+
+Ya hay algo escuchando en el puerto 8080 (puede ser una instancia anterior del mismo backend que quedó corriendo).
+
+- **Windows**: `netstat -ano | findstr :8080` (la última columna es el PID) → `taskkill /PID <ese_numero> /F`.
+- **Mac/Linux**: `lsof -i :8080` → `kill -9 <PID>`.
+
+Después volver a correr `mvnw spring-boot:run`.
+
+</details>
+
+<details>
+<summary><strong>"'mvnw' no se reconoce..." (Windows) o "Permission denied" al correr <code>./mvnw</code> (Mac/Linux)</strong></summary>
+
+- **Windows**: el comando es `.\mvnw.cmd`, no `./mvnw` (eso es para Mac/Linux) — y hay que estar parado en la carpeta `backend`.
+- **Mac/Linux**: al script `mvnw` a veces se le pierde el permiso de ejecución al clonar el repo. Correr `chmod +x mvnw` una vez, adentro de la carpeta `backend`, y volver a intentar `./mvnw spring-boot:run`.
+
+</details>
+
+<details>
+<summary><strong>El frontend carga pero no muestra nada / no conecta con la API</strong></summary>
+
+Casi siempre es que el backend no está corriendo (o está corriendo en otro puerto). Para confirmar: abrir `http://localhost:8080/api/proyectos` directo en el navegador — tiene que devolver un error JSON de "No autenticado" (eso es normal, significa que el backend SÍ está respondiendo). Si en cambio el navegador dice que no puede conectarse, el backend no está arriba: volver al [paso 2](#2-backend).
+
+</details>
+
+<details>
+<summary><strong>"'npm' no se reconoce como un comando..."</strong></summary>
+
+Node.js no está instalado. Descargarlo de [nodejs.org](https://nodejs.org/) (versión LTS), instalar, y abrir una terminal nueva antes de reintentar `npm install`.
+
+</details>
+
 ## Deploy
 
 El proyecto ya está desplegado (ver [Demo en vivo](#-demo-en-vivo) arriba) usando 3 servicios independientes, sin necesitar tarjeta de crédito en ninguno:
