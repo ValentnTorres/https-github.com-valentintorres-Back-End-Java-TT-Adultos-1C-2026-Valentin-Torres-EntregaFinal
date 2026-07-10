@@ -7,27 +7,27 @@
 // mientras el contenedor se levanta de nuevo.
 //
 // En vez de una barra de progreso seria (que ademas seria mentira,
-// porque no tenemos forma de saber cuanto falta), la idea es hacer un
-// chiste de que "no sabemos por que tarda" mientras insistimos en que
-// hay que esperar - le baja la ansiedad a quien este mirando una
-// pantalla en blanco sin explicacion.
+// porque no tenemos forma de saber cuanto falta), la idea es un emoji
+// gigante que va cambiando de cara (como la Esfera de Las Vegas) con
+// un globo de dialogo arriba, haciendo el chiste de que "no sabemos
+// por que tarda" mientras insistimos en que hay que esperar.
 import { useEffect, useState } from "react";
 
-const EXCUSAS = [
-  "Convenciendo al servidor de que se despierte...",
-  "No, no se rompió nada. Bueno, eso creemos.",
-  "Consultando a un oráculo por qué tarda tanto...",
-  "Che, dale, ya casi arranca...",
-  "Esto nunca tarda tanto. Bueno, a veces sí.",
-  "El servidor gratuito se queda dormido si nadie lo usa. Ahora se está despertando.",
+const FRASES = [
+  { cara: "😐", texto: "Convenciendo al servidor de que se despierte..." },
+  { cara: "😅", texto: "No, no se rompió nada. Bueno, eso creemos." },
+  { cara: "🤔", texto: "Consultando a un oráculo por qué tarda tanto..." },
+  { cara: "😤", texto: "Che, dale, ya casi arranca..." },
+  { cara: "🙄", texto: "Esto nunca tarda tanto. Bueno, a veces sí." },
+  { cara: "😴", texto: "El servidor gratuito se queda dormido si nadie lo usa. Ahora se está despertando." },
 ];
 
 function DespertandoBackend() {
-  const [indiceExcusa, setIndiceExcusa] = useState(0);
+  const [indice, setIndice] = useState(0);
 
   useEffect(() => {
     const intervalo = setInterval(() => {
-      setIndiceExcusa((actual) => (actual + 1) % EXCUSAS.length);
+      setIndice((actual) => (actual + 1) % FRASES.length);
     }, 3000);
     return () => clearInterval(intervalo);
   }, []);
@@ -35,12 +35,18 @@ function DespertandoBackend() {
   return (
     <div className="pantalla-espera">
       <section className="tarjeta-espera">
-        <span className="espera-spinner" aria-hidden="true" />
-        <h2>Che, esperá un toque...</h2>
-        <p className="subtitulo">{EXCUSAS[indiceExcusa]}</p>
+        <h2>Hola Profesor, lamento que tenga que esperar</h2>
+
+        <div className="esfera-contenedor">
+          <div className="globo-dialogo">{FRASES[indice].texto}</div>
+          <span className="esfera-emoji" aria-hidden="true">
+            {FRASES[indice].cara}
+          </span>
+        </div>
+
         <p className="espera-detalle">
-          (Posta: el hosting gratuito duerme el servidor cuando nadie lo usa. No es que esté colgado, se está
-          despertando. Dale unos segundos más.)
+          El hosting gratuito duerme el servidor cuando nadie lo usa, así que en este momento se está despertando.
+          En unos segundos debería responder con normalidad.
         </p>
       </section>
     </div>

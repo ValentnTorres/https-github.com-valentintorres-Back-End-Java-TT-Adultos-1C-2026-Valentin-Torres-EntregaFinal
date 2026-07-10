@@ -962,34 +962,79 @@
 }
 
 .tarjeta-espera h2 {
-  margin: 20px 0 8px;
-}
-
-.tarjeta-espera .subtitulo {
-  margin: 0 auto;
-  min-height: 40px;
+  margin: 4px 0 0;
 }
 
 .espera-detalle {
   font-size: 12px;
   color: var(--cds-gray-50);
-  margin-top: 20px;
+  margin-top: 8px;
 }
 
-.espera-spinner {
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--cds-gray-20);
-  border-top-color: var(--cds-blue-60);
-  border-radius: 9999px;
-  animation: espera-girar 800ms linear infinite;
+/* Emoji gigante que va cambiando de cara (tipo Esfera de Las Vegas),
+   con un globo de dialogo estilo historieta arriba. Esta es la unica
+   parte de la app con esquinas redondeadas fuera de botones/avatares:
+   un globo de dialogo recto no se lee como un globo de dialogo, asi
+   que ahi vale la pena romper la regla. */
+.esfera-contenedor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin: 28px 0 20px;
 }
 
-@keyframes espera-girar {
-  to {
-    transform: rotate(360deg);
+.esfera-emoji {
+  font-size: 72px;
+  line-height: 1;
+  animation: esfera-latido 1.2s ease-in-out infinite;
+}
+
+@keyframes esfera-latido {
+  0%,
+  100% {
+    transform: scale(1);
   }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.globo-dialogo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  border-radius: 16px;
+  padding: 14px 18px;
+  font-size: 14px;
+  color: var(--cds-gray-100);
+  max-width: 320px;
+  min-height: 48px;
+  text-align: center;
+}
+
+.globo-dialogo::before,
+.globo-dialogo::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-style: solid;
+}
+
+.globo-dialogo::before {
+  bottom: -11px;
+  border-width: 11px 11px 0 11px;
+  border-color: var(--cds-gray-20) transparent transparent transparent;
+}
+
+.globo-dialogo::after {
+  bottom: -9px;
+  border-width: 9px 9px 0 9px;
+  border-color: var(--cds-white) transparent transparent transparent;
 }
 
 .enlace {
