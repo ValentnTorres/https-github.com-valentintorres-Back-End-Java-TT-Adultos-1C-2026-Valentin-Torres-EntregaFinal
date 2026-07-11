@@ -1,16 +1,18 @@
 // Pagina de Proyectos: lista los proyectos existentes y permite
 // crear, editar y borrar. Es el CRUD mas simple de los tres porque
 // Proyecto no depende de ninguna otra entidad.
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   listarProyectos,
   crearProyecto,
   actualizarProyecto,
   eliminarProyecto,
 } from "../api/proyectosApi";
+import { listarTareas } from "../api/tareasApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
 import ConfirmModal from "./ConfirmModal";
+import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
 
 const FORM_VACIO = { nombre: "", descripcion: "" };
 // Cantidad de filas esqueleto a mostrar mientras carga. No hay forma de
@@ -22,6 +24,10 @@ const FILAS_ESQUELETO = 1;
 
 function ProyectosPage({ onVerTareas, usuario }) {
   const [proyectos, setProyectos] = useState([]);
+  // Todas las tareas (de los proyectos visibles), para calcular el
+  // progreso y los usuarios asignados de cada proyecto sin pedirle al
+  // backend un endpoint de estadisticas aparte.
+  const [tareas, setTareas] = useState([]);
   const [form, setForm] = useState(FORM_VACIO);
   const [idEnEdicion, setIdEnEdicion] = useState(null);
   const [error, setError] = useState("");
@@ -29,15 +35,16 @@ function ProyectosPage({ onVerTareas, usuario }) {
   // Proyecto que se esta por borrar (null = no hay modal abierto).
   const [proyectoAEliminar, setProyectoAEliminar] = useState(null);
 
-  // Trae la lista de proyectos del backend. La llamamos al montar el
-  // componente y despues de cada crear/editar/borrar para mantener la
-  // lista sincronizada con la base de datos. "cargando" solo importa la
-  // primera vez (las veces siguientes ya esta en false y no vuelve a
-  // mostrar el esqueleto).
+  // Trae la lista de proyectos y de tareas del backend. La llamamos al
+  // montar el componente y despues de cada crear/editar/borrar para
+  // mantener todo sincronizado con la base de datos. "cargando" solo
+  // importa la primera vez (las veces siguientes ya esta en false y no
+  // vuelve a mostrar el esqueleto).
   async function cargarProyectos() {
     try {
-      const datos = await listarProyectos();
-      setProyectos(datos);
+      const [proyectosData, tareasData] = await Promise.all([listarProyectos(), listarTareas()]);
+      setProyectos(proyectosData);
+      setTareas(tareasData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -48,6 +55,27 @@ function ProyectosPage({ onVerTareas, usuario }) {
   useEffect(() => {
     cargarProyectos();
   }, []);
+
+  // Progreso (tareas completadas/totales) y usuarios asignados de cada
+  // proyecto, calculado una sola vez por render en vez de recorrer
+  // "tareas" adentro del .map() de cada fila.
+  const estadisticasPorProyecto = useMemo(() => {
+    const mapa = new Map();
+    for (const tarea of tareas) {
+      const proyectoId = tarea.proyecto?.id;
+      if (proyectoId == null) continue;
+      if (!mapa.has(proyectoId)) {
+        mapa.set(proyectoId, { total: 0, completadas: 0, usuarios: new Map() });
+      }
+      const stats = mapa.get(proyectoId);
+      stats.total += 1;
+      if (tarea.columna?.esFinal) stats.completadas += 1;
+      for (const usuario of tarea.usuariosAsignados ?? []) {
+        stats.usuarios.set(usuario.id, usuario);
+      }
+    }
+    return mapa;
+  }, [tareas]);
 
   function manejarCambio(evento) {
     const { name, value } = evento.target;
@@ -160,6 +188,7 @@ function ProyectosPage({ onVerTareas, usuario }) {
               <div>
                 <Skeleton width="160px" height="16px" />
                 <Skeleton className="skeleton-linea" width="220px" height="12px" />
+                <Skeleton className="skeleton-linea" width="140px" height="6px" />
               </div>
               <div className="acciones">
                 <Skeleton width="64px" height="34px" />
@@ -169,25 +198,71 @@ function ProyectosPage({ onVerTareas, usuario }) {
           ))}
 
         {!cargando &&
-          proyectos.map((proyecto) => (
-            <li key={proyecto.id} className="fade-in-suave">
-              <button
-                type="button"
-                className="proyecto-info-boton"
-                onClick={() => onVerTareas(proyecto.id)}
-                title="Ver las tareas de este proyecto"
-              >
-                <strong>{proyecto.nombre}</strong>
-                {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
-              </button>
-              {puedeEditar(proyecto) && (
-                <div className="acciones">
-                  <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
-                  <button onClick={() => setProyectoAEliminar(proyecto)}>Eliminar</button>
-                </div>
-              )}
-            </li>
-          ))}
+          proyectos.map((proyecto) => {
+            const stats = estadisticasPorProyecto.get(proyecto.id);
+            const total = stats?.total ?? 0;
+            const completadas = stats?.completadas ?? 0;
+            const restantes = total - completadas;
+            const porcentaje = total === 0 ? 0 : Math.round((completadas / total) * 100);
+            const usuariosAsignados = stats ? [...stats.usuarios.values()] : [];
+            const textoProgreso =
+              total === 0 ? "Sin tareas todavía" : `${restantes} restante${restantes === 1 ? "" : "s"} de ${total}`;
+
+            return (
+              <li key={proyecto.id} className="fade-in-suave">
+                <button
+                  type="button"
+                  className="proyecto-info-boton"
+                  onClick={() => onVerTareas(proyecto.id)}
+                  title="Ver las tareas de este proyecto"
+                >
+                  <strong>{proyecto.nombre}</strong>
+                  {proyecto.descripcion && <p>{proyecto.descripcion}</p>}
+
+                  <div className="proyecto-progreso">
+                    <div
+                      className="proyecto-progreso-barra"
+                      role="progressbar"
+                      aria-valuenow={porcentaje}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div className="proyecto-progreso-relleno" style={{ width: `${porcentaje}%` }} />
+                    </div>
+                    <div className="proyecto-progreso-meta">
+                      <span className="dato-mono">{textoProgreso}</span>
+                      {usuariosAsignados.length > 0 && (
+                        <div
+                          className="avatares-pila"
+                          title={usuariosAsignados.map((usuario) => usuario.nombre).join(", ")}
+                        >
+                          {usuariosAsignados.slice(0, 4).map((usuario) => (
+                            <span
+                              key={usuario.id}
+                              className={`avatar avatar-chico avatar-pila ${obtenerVarianteAvatar(usuario.nombre)}`}
+                            >
+                              {obtenerIniciales(usuario.nombre)}
+                            </span>
+                          ))}
+                          {usuariosAsignados.length > 4 && (
+                            <span className="avatar avatar-chico avatar-pila avatar-gris">
+                              +{usuariosAsignados.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+                {puedeEditar(proyecto) && (
+                  <div className="acciones">
+                    <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
+                    <button onClick={() => setProyectoAEliminar(proyecto)}>Eliminar</button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         {!cargando && proyectos.length === 0 && <p className="fade-in-suave">Todavia no hay proyectos cargados.</p>}
       </ul>
 
