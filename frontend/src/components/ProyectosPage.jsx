@@ -1,7 +1,7 @@
 // Pagina de Proyectos: lista los proyectos existentes y permite
 // crear, editar y borrar. Es el CRUD mas simple de los tres porque
 // Proyecto no depende de ninguna otra entidad.
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   listarProyectos,
   crearProyecto,
@@ -9,12 +9,13 @@ import {
   eliminarProyecto,
 } from "../api/proyectosApi";
 import { listarTareas } from "../api/tareasApi";
+import { listarUsuarios } from "../api/usuariosApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
 import ConfirmModal from "./ConfirmModal";
 import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
 
-const FORM_VACIO = { nombre: "", descripcion: "" };
+const FORM_VACIO = { nombre: "", descripcion: "", pmId: "" };
 // Cantidad de filas esqueleto a mostrar mientras carga. No hay forma de
 // saber cuantos proyectos hay antes de que responda la API, asi que se
 // muestra solo 1: si se muestran varias y despues resulta que hay menos
@@ -28,6 +29,9 @@ function ProyectosPage({ onVerTareas, usuario }) {
   // progreso y los usuarios asignados de cada proyecto sin pedirle al
   // backend un endpoint de estadisticas aparte.
   const [tareas, setTareas] = useState([]);
+  // Lista de PMs del sistema, solo se pide si sos ADMIN: la usa el
+  // selector de "reasignar PM dueño" en el formulario de edición.
+  const [pms, setPms] = useState([]);
   const [form, setForm] = useState(FORM_VACIO);
   const [idEnEdicion, setIdEnEdicion] = useState(null);
   const [error, setError] = useState("");
@@ -35,26 +39,33 @@ function ProyectosPage({ onVerTareas, usuario }) {
   // Proyecto que se esta por borrar (null = no hay modal abierto).
   const [proyectoAEliminar, setProyectoAEliminar] = useState(null);
 
+  const esAdmin = usuario.rol === "ADMIN";
+
   // Trae la lista de proyectos y de tareas del backend. La llamamos al
   // montar el componente y despues de cada crear/editar/borrar para
   // mantener todo sincronizado con la base de datos. "cargando" solo
   // importa la primera vez (las veces siguientes ya esta en false y no
   // vuelve a mostrar el esqueleto).
-  async function cargarProyectos() {
+  const cargarProyectos = useCallback(async () => {
     try {
-      const [proyectosData, tareasData] = await Promise.all([listarProyectos(), listarTareas()]);
+      const [proyectosData, tareasData, usuariosData] = await Promise.all([
+        listarProyectos(),
+        listarTareas(),
+        esAdmin ? listarUsuarios() : Promise.resolve([]),
+      ]);
       setProyectos(proyectosData);
       setTareas(tareasData);
+      setPms(usuariosData.filter((u) => u.rol === "PM"));
     } catch (err) {
       setError(err.message);
     } finally {
       setCargando(false);
     }
-  }
+  }, [esAdmin]);
 
   useEffect(() => {
     cargarProyectos();
-  }, []);
+  }, [cargarProyectos]);
 
   // Progreso (tareas completadas/totales) y usuarios asignados de cada
   // proyecto, calculado una sola vez por render en vez de recorrer
@@ -87,7 +98,11 @@ function ProyectosPage({ onVerTareas, usuario }) {
     setError("");
     try {
       if (idEnEdicion) {
-        await actualizarProyecto(idEnEdicion, form);
+        // El selector de PM solo lo ve/edita un ADMIN (ver el form mas
+        // abajo); para cualquier otro caso no se manda "creadoPor" y el
+        // backend deja el dueño del proyecto como estaba.
+        const body = esAdmin && form.pmId ? { ...form, creadoPor: { id: Number(form.pmId) } } : form;
+        await actualizarProyecto(idEnEdicion, body);
       } else {
         await crearProyecto(form);
       }
@@ -101,7 +116,11 @@ function ProyectosPage({ onVerTareas, usuario }) {
 
   function empezarEdicion(proyecto) {
     setIdEnEdicion(proyecto.id);
-    setForm({ nombre: proyecto.nombre, descripcion: proyecto.descripcion ?? "" });
+    setForm({
+      nombre: proyecto.nombre,
+      descripcion: proyecto.descripcion ?? "",
+      pmId: proyecto.creadoPor?.id ? String(proyecto.creadoPor.id) : "",
+    });
   }
 
   function cancelarEdicion() {
@@ -168,6 +187,24 @@ function ProyectosPage({ onVerTareas, usuario }) {
               onChange={manejarCambio}
             />
           </div>
+          {esAdmin && idEnEdicion && (
+            <div className="campo">
+              <label htmlFor="pm-proyecto">PM dueño</label>
+              <select
+                id="pm-proyecto"
+                name="pmId"
+                value={form.pmId}
+                onChange={manejarCambio}
+                title="Reasignar el proyecto a otro PM"
+              >
+                {pms.map((pm) => (
+                  <option key={pm.id} value={pm.id}>
+                    {pm.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="campo campo-boton">
             <button type="submit">{idEnEdicion ? "Guardar cambios" : "Crear proyecto"}</button>
             {idEnEdicion && (

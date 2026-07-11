@@ -1,6 +1,7 @@
 package com.talentotech.gestortareas.service;
 
 import com.talentotech.gestortareas.exception.AccesoDenegadoException;
+import com.talentotech.gestortareas.exception.BusinessRuleException;
 import com.talentotech.gestortareas.exception.ResourceNotFoundException;
 import com.talentotech.gestortareas.model.Proyecto;
 import com.talentotech.gestortareas.model.Rol;
@@ -21,9 +22,11 @@ import java.util.List;
 public class ProyectoService {
 
     private final ProyectoRepository proyectoRepository;
+    private final UsuarioService usuarioService;
 
-    public ProyectoService(ProyectoRepository proyectoRepository) {
+    public ProyectoService(ProyectoRepository proyectoRepository, UsuarioService usuarioService) {
         this.proyectoRepository = proyectoRepository;
+        this.usuarioService = usuarioService;
     }
 
     public List<Proyecto> listarVisiblesPara(Usuario actual) {
@@ -56,6 +59,21 @@ public class ProyectoService {
         exigirPropietario(proyectoExistente, actual);
         proyectoExistente.setNombre(datosNuevos.getNombre());
         proyectoExistente.setDescripcion(datosNuevos.getDescripcion());
+
+        // Reasignar el PM dueño del proyecto es cosa exclusiva de ADMIN
+        // (ni siquiera el propio PM dueño puede transferirse su proyecto
+        // a otro) - si viene de un PM, se ignora en silencio cualquier
+        // creadoPor que haya mandado el body.
+        if (actual.getRol() == Rol.ADMIN
+                && datosNuevos.getCreadoPor() != null
+                && datosNuevos.getCreadoPor().getId() != null) {
+            Usuario nuevoPm = usuarioService.buscarPorId(datosNuevos.getCreadoPor().getId());
+            if (nuevoPm.getRol() != Rol.PM) {
+                throw new BusinessRuleException("El usuario indicado como PM no tiene rol PM");
+            }
+            proyectoExistente.setCreadoPor(nuevoPm);
+        }
+
         return proyectoRepository.save(proyectoExistente);
     }
 
