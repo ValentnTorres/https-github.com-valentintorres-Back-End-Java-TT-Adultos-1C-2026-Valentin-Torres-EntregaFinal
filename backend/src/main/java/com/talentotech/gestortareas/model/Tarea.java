@@ -5,8 +5,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,6 +44,16 @@ public class Tarea {
     private String descripcion;
 
     private LocalDate fechaLimite;
+
+    // Sin nullable=false a proposito: si tuviera esa restriccion, agregar
+    // esta columna a una tabla con filas existentes (produccion) fallaria
+    // o las rellenaria con un valor por defecto raro - ya pisamos ese
+    // problema antes con creado_por_id y rol. Las tareas viejas quedan
+    // con NULL, que simplemente no cuentan para "actividad reciente" en
+    // el dashboard. updatable=false: se setea una sola vez, al crear.
+    @CreationTimestamp
+    @Column(name = "fecha_creacion", updatable = false)
+    private LocalDateTime fechaCreacion;
 
     // Relacion ManyToOne: en que columna del tablero esta esta tarea.
     // Columna no tiene una coleccion de vuelta hacia Tarea, asi que
@@ -123,6 +135,10 @@ public class Tarea {
 
     public void setFechaLimite(LocalDate fechaLimite) {
         this.fechaLimite = fechaLimite;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 
     public Proyecto getProyecto() {

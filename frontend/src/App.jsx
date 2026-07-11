@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import ProyectosPage from "./components/ProyectosPage";
 import UsuariosPage from "./components/UsuariosPage";
 import TareasPage from "./components/TareasPage";
+import DashboardPage from "./components/DashboardPage";
 import LoginPage from "./components/LoginPage";
 import DespertandoBackend from "./components/DespertandoBackend";
 import { API_BASE_URL, obtenerSesion, borrarSesion } from "./api/config";
@@ -16,15 +17,18 @@ import "./App.css";
 // Ya no hay una pestaña "Tareas" en el menu: cada proyecto es su propio
 // tablero aislado (como los boards de Trello), y la unica forma de
 // entrar a uno es clickeandolo desde Proyectos (ver "proyectoAbiertoId").
-// "Usuarios" lista a TODA la gente del sistema, asi que solo tiene
-// sentido para un ADMIN (ver filtro en pestanasVisiblesPara).
+// "roles" filtra que pestañas ve cada quien: sin esa propiedad, la
+// pestaña es visible para cualquier rol. "Usuarios" lista a TODA la
+// gente del sistema (solo ADMIN); "Dashboard" son metricas agregadas
+// que solo le sirven a quien puede crear/gestionar proyectos (ADMIN y PM).
 const PESTANAS = [
   { id: "proyectos", etiqueta: "Proyectos" },
-  { id: "usuarios", etiqueta: "Usuarios", soloAdmin: true },
+  { id: "dashboard", etiqueta: "Dashboard", roles: ["ADMIN", "PM"] },
+  { id: "usuarios", etiqueta: "Usuarios", roles: ["ADMIN"] },
 ];
 
 function pestanasVisiblesPara(usuario) {
-  return PESTANAS.filter((pestana) => !pestana.soloAdmin || usuario?.rol === "ADMIN");
+  return PESTANAS.filter((pestana) => !pestana.roles || pestana.roles.includes(usuario?.rol));
 }
 
 function App() {
@@ -136,6 +140,11 @@ function App() {
         <div hidden={!!proyectoAbiertoId || pestanaActiva !== "proyectos"}>
           <ProyectosPage onVerTareas={abrirProyecto} usuario={usuario} />
         </div>
+        {(usuario.rol === "ADMIN" || usuario.rol === "PM") && (
+          <div hidden={!!proyectoAbiertoId || pestanaActiva !== "dashboard"}>
+            <DashboardPage usuario={usuario} />
+          </div>
+        )}
         {usuario.rol === "ADMIN" && (
           <div hidden={!!proyectoAbiertoId || pestanaActiva !== "usuarios"}>
             <UsuariosPage />

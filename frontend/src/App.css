@@ -1460,3 +1460,116 @@
   background: var(--cds-red-70) !important;
   border-color: var(--cds-red-70) !important;
 }
+
+/* --- Dashboard (ADMIN y PM) --- */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dashboard-grid-listas {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.dashboard-tarjeta {
+  background: var(--cds-white);
+  border: 1px solid var(--cds-gray-20);
+  border-top: 3px solid var(--cds-blue-60);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.dashboard-grid > .dashboard-tarjeta,
+.dashboard-grid-listas > .dashboard-tarjeta {
+  margin-bottom: 0;
+}
+
+.dashboard-tarjeta-ancha {
+  grid-column: 1 / -1;
+}
+
+.dashboard-etiqueta {
+  font-size: 13px;
+  color: var(--cds-gray-70);
+}
+
+.dashboard-numero {
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--cds-gray-100);
+}
+
+.dashboard-detalle {
+  font-size: 12px;
+  color: var(--cds-gray-50);
+}
+
+.dashboard-vacio {
+  margin: 8px 0 0;
+  color: var(--cds-gray-50);
+  font-size: 13px;
+}
+
+.dashboard-lista {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-lista > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--cds-gray-20);
+  font-size: 14px;
+}
+
+.dashboard-lista > li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dashboard-lista-meta {
+  color: var(--cds-gray-50);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.dashboard-lista-mas {
+  color: var(--cds-gray-50);
+  font-size: 12px;
+  justify-content: center !important;
+}
+
+.dashboard-lista-equipos > li,
+.dashboard-lista-carga > li {
+  gap: 10px;
+}
+
+.dashboard-equipo-nombre {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-carga-barra {
+  width: 100px;
+  height: 6px;
+  background: var(--cds-gray-20);
+  flex-shrink: 0;
+}
+
+.dashboard-carga-relleno {
+  height: 100%;
+  background: var(--cds-blue-60);
+}
