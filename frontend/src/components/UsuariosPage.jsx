@@ -11,6 +11,7 @@ import {
 } from "../api/usuariosApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
+import ConfirmModal from "./ConfirmModal";
 import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
 
 const FORM_VACIO = { nombre: "", email: "", password: "" };
@@ -26,6 +27,10 @@ function UsuariosPage() {
   const [idEnEdicion, setIdEnEdicion] = useState(null);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
+  // Usuario que se esta por borrar (null = no hay ningun modal de
+  // confirmacion abierto). Se guarda el objeto entero, no solo el id,
+  // para poder armar el mensaje del modal con su nombre.
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
 
   async function cargarUsuarios() {
     try {
@@ -76,10 +81,9 @@ function UsuariosPage() {
     setForm(FORM_VACIO);
   }
 
-  async function manejarEliminar(usuario) {
-    const confirmado = window.confirm(`¿Eliminar a "${usuario.nombre}"?`);
-    if (!confirmado) return;
-
+  async function confirmarEliminar() {
+    const usuario = usuarioAEliminar;
+    setUsuarioAEliminar(null);
     setError("");
     try {
       await eliminarUsuario(usuario.id);
@@ -229,12 +233,18 @@ function UsuariosPage() {
                   </select>
                 )}
                 <button onClick={() => empezarEdicion(usuario)}>Editar</button>
-                <button onClick={() => manejarEliminar(usuario)}>Eliminar</button>
+                <button onClick={() => setUsuarioAEliminar(usuario)}>Eliminar</button>
               </div>
             </li>
           ))}
         {!cargando && usuarios.length === 0 && <p className="fade-in-suave">Todavia no hay usuarios cargados.</p>}
       </ul>
+
+      <ConfirmModal
+        mensaje={usuarioAEliminar ? `¿Eliminar a "${usuarioAEliminar.nombre}"?` : null}
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setUsuarioAEliminar(null)}
+      />
     </section>
   );
 }

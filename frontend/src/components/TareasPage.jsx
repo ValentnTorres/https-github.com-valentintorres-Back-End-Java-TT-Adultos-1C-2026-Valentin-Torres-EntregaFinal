@@ -39,6 +39,7 @@ import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
 import TareaCard from "./TareaCard";
 import InputFecha from "./InputFecha";
+import ConfirmModal from "./ConfirmModal";
 import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
 
 // Cantidad de columnas/tarjetas esqueleto mientras carga el tablero por
@@ -89,6 +90,8 @@ function TareasPage({ proyectoAbiertoId, onVolver }) {
   const [columnaCreandoTareaId, setColumnaCreandoTareaId] = useState(null);
   const [tituloTareaRapida, setTituloTareaRapida] = useState("");
   const [fechaTareaRapida, setFechaTareaRapida] = useState("");
+  // Columna que se esta por borrar (null = no hay modal abierto).
+  const [columnaAEliminar, setColumnaAEliminar] = useState(null);
 
   async function cargarDatos() {
     try {
@@ -346,9 +349,9 @@ function TareasPage({ proyectoAbiertoId, onVolver }) {
     }
   }
 
-  async function manejarEliminarColumna(columna) {
-    if (!window.confirm(`¿Eliminar la columna "${columna.nombre}"?`)) return;
-
+  async function confirmarEliminarColumna() {
+    const columna = columnaAEliminar;
+    setColumnaAEliminar(null);
     setError("");
     try {
       await eliminarColumna(columna.id);
@@ -609,7 +612,7 @@ function TareasPage({ proyectoAbiertoId, onVolver }) {
                   <button
                     type="button"
                     className="columna-eliminar"
-                    onClick={() => manejarEliminarColumna(columna)}
+                    onClick={() => setColumnaAEliminar(columna)}
                     title="Eliminar columna (solo si no tiene tareas)"
                   >
                     Eliminar
@@ -725,6 +728,12 @@ function TareasPage({ proyectoAbiertoId, onVolver }) {
           </>
         )}
       </div>
+
+      <ConfirmModal
+        mensaje={columnaAEliminar ? `¿Eliminar la columna "${columnaAEliminar.nombre}"?` : null}
+        onConfirmar={confirmarEliminarColumna}
+        onCancelar={() => setColumnaAEliminar(null)}
+      />
     </section>
   );
 }

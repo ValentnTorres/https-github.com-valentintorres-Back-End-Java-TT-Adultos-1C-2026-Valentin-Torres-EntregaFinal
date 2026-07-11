@@ -10,6 +10,7 @@ import {
 } from "../api/proyectosApi";
 import Mensaje from "./Mensaje";
 import Skeleton from "./Skeleton";
+import ConfirmModal from "./ConfirmModal";
 
 const FORM_VACIO = { nombre: "", descripcion: "" };
 // Cantidad de filas esqueleto a mostrar mientras carga. No hay forma de
@@ -25,6 +26,8 @@ function ProyectosPage({ onVerTareas, usuario }) {
   const [idEnEdicion, setIdEnEdicion] = useState(null);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(true);
+  // Proyecto que se esta por borrar (null = no hay modal abierto).
+  const [proyectoAEliminar, setProyectoAEliminar] = useState(null);
 
   // Trae la lista de proyectos del backend. La llamamos al montar el
   // componente y despues de cada crear/editar/borrar para mantener la
@@ -78,14 +81,12 @@ function ProyectosPage({ onVerTareas, usuario }) {
     setForm(FORM_VACIO);
   }
 
-  async function manejarEliminar(proyecto) {
-    // Borrar un proyecto borra en cascada todas sus tareas (no hay forma
-    // de deshacerlo despues), asi que conviene confirmar antes.
-    const confirmado = window.confirm(
-      `¿Eliminar el proyecto "${proyecto.nombre}"? Esto también borra todas sus tareas.`
-    );
-    if (!confirmado) return;
-
+  // Borrar un proyecto borra en cascada todas sus tareas (no hay forma
+  // de deshacerlo despues), asi que conviene confirmar antes (ver
+  // ConfirmModal, mas abajo en el render).
+  async function confirmarEliminar() {
+    const proyecto = proyectoAEliminar;
+    setProyectoAEliminar(null);
     setError("");
     try {
       await eliminarProyecto(proyecto.id);
@@ -182,13 +183,23 @@ function ProyectosPage({ onVerTareas, usuario }) {
               {puedeEditar(proyecto) && (
                 <div className="acciones">
                   <button onClick={() => empezarEdicion(proyecto)}>Editar</button>
-                  <button onClick={() => manejarEliminar(proyecto)}>Eliminar</button>
+                  <button onClick={() => setProyectoAEliminar(proyecto)}>Eliminar</button>
                 </div>
               )}
             </li>
           ))}
         {!cargando && proyectos.length === 0 && <p className="fade-in-suave">Todavia no hay proyectos cargados.</p>}
       </ul>
+
+      <ConfirmModal
+        mensaje={
+          proyectoAEliminar
+            ? `¿Eliminar el proyecto "${proyectoAEliminar.nombre}"? Esto también borra todas sus tareas.`
+            : null
+        }
+        onConfirmar={confirmarEliminar}
+        onCancelar={() => setProyectoAEliminar(null)}
+      />
     </section>
   );
 }

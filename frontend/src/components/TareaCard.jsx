@@ -4,8 +4,10 @@
 // Es "draggable": al arrastrarla, guardamos el id de la tarea en el
 // dataTransfer del evento nativo de drag and drop del navegador (no
 // usamos ninguna libreria externa, solo la API de HTML5).
+import { useState } from "react";
 import { obtenerIniciales, obtenerVarianteAvatar } from "../utils/avatar";
 import { calcularEstadoFecha } from "../utils/fecha";
+import ConfirmModal from "./ConfirmModal";
 
 function TareaCard({
   tarea,
@@ -23,6 +25,8 @@ function TareaCard({
   onDragStart,
 }) {
   const estadoFecha = calcularEstadoFecha(tarea.fechaLimite, tarea.columna.esFinal);
+  // Si esta en true, se muestra el modal preguntando "¿eliminar esta tarea?".
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
 
   return (
     <div
@@ -107,15 +111,18 @@ function TareaCard({
         </div>
         <div className="tarjeta-acciones">
           <button onClick={() => onEditar(tarea)}>Editar</button>
-          <button
-            onClick={() => {
-              if (window.confirm(`¿Eliminar la tarea "${tarea.titulo}"?`)) onEliminar(tarea.id);
-            }}
-          >
-            Eliminar
-          </button>
+          <button onClick={() => setConfirmandoEliminar(true)}>Eliminar</button>
         </div>
       </div>
+
+      <ConfirmModal
+        mensaje={confirmandoEliminar ? `¿Eliminar la tarea "${tarea.titulo}"?` : null}
+        onConfirmar={() => {
+          setConfirmandoEliminar(false);
+          onEliminar(tarea.id);
+        }}
+        onCancelar={() => setConfirmandoEliminar(false)}
+      />
     </div>
   );
 }
